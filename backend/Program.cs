@@ -1,4 +1,5 @@
 using backend.Database;
+using backend.Repository;
 using Dapper;
 
 var builder = WebApplication.CreateBuilder(args);
