@@ -1,0 +1,9 @@
+- [Thư mục] Controller/ [chứa các lớp] để sử lý yêu cầu API.
+
+- ... Repository/ ... để tương tác với csdl.
+
+- ... Models/ chứa ... để sử dụng khi truy xuất dữ liệu từ db(csdl). Các lớp này sẽ được 
+dùng trong nội bộ hệ thống.
+
+- ... DTOs/ ... để Controller/ gửi dữ liệu sau khi xử lý yêu cầu.
+
