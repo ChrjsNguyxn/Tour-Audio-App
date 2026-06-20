@@ -51,13 +51,32 @@ namespace Quan4.AdminApi.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginRequest request)
         {
+            // --- BẬT MÁY X-QUANG KIỂM TRA DỮ LIỆU ĐẦU VÀO ---
+            Console.WriteLine($"\n[DEBUG] 1. React gửi qua: Username = '{request.Username}' | Password = '{request.Password}'");
+
+            // 1. Tìm user trong DB
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == request.Username);
             
-            if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+            if (user == null) 
+            {
+                Console.WriteLine("[DEBUG] 2. KẾT QUẢ: Không tìm thấy Username này trong Database!");
+                return Unauthorized("Sai tên đăng nhập hoặc mật khẩu!");
+            }
+
+            // --- KIỂM TRA ĐỘ DÀI MẬT KHẨU BĂM ---
+            Console.WriteLine($"[DEBUG] 2. Tìm thấy User! Chuỗi Hash trong DB là: '{user.PasswordHash}'");
+            Console.WriteLine($"[DEBUG] 3. Độ dài chuỗi Hash: {user.PasswordHash.Length} ký tự (Nếu dưới 60 là bị lỗi Database)");
+
+            // 2. So sánh mật khẩu
+            bool isMatch = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
+            Console.WriteLine($"[DEBUG] 4. KẾT QUẢ BCrypt Đối chiếu: {isMatch}\n");
+
+            if (!isMatch)
             {
                 return Unauthorized("Sai tên đăng nhập hoặc mật khẩu!");
             }
 
+            // 3. Nếu đúng, tạo JWT Token
             var token = CreateToken(user);
             
             return Ok(new { token = token, message = "Đăng nhập thành công!" });
