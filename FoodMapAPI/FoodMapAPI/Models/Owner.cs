@@ -11,5 +11,6 @@
 
         // Một owner có thể có nhiều quán
         public List<Shop> Shops { get; set; } = new List<Shop>();
+        public string Status { get; set; } = "Pending";
     }
 }

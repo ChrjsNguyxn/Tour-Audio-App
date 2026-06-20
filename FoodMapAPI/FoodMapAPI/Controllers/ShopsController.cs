@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using FoodMapAPI.Data;
+using FoodMapAPI.DTOs;
 using FoodMapAPI.Models;
+using FoodMapAPI.Repository;
 
 namespace FoodMapAPI.Controllers
 {
@@ -9,45 +9,85 @@ namespace FoodMapAPI.Controllers
     [Route("api/[controller]")]
     public class ShopsController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly IShopRepository _shopRepo;
 
-        public ShopsController(AppDbContext context)
+        public ShopsController(IShopRepository shopRepo)
         {
-            _context = context;
+            _shopRepo = shopRepo;
         }
 
         // GET: api/shops
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Shop>>> GetShops()
         {
-            return await _context.Shops.ToListAsync();
+            return Ok(await _shopRepo.GetAllAsync());
         }
 
         // GET: api/shops/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Shop>> GetShop(int id)
         {
-            var shop = await _context.Shops.FindAsync(id);
+            var shop = await _shopRepo.GetByIdAsync(id);
             if (shop == null) return NotFound();
-            return shop;
+            return Ok(shop);
+        }
+
+        // GET: api/shops/owner/5
+        [HttpGet("owner/{ownerId}")]
+        public async Task<ActionResult<IEnumerable<Shop>>> GetByOwner(int ownerId)
+        {
+            return Ok(await _shopRepo.GetByOwnerIdAsync(ownerId));
         }
 
         // POST: api/shops
         [HttpPost]
-        public async Task<ActionResult<Shop>> CreateShop(Shop shop)
+        public async Task<ActionResult<Shop>> CreateShop(ShopDto dto)
         {
-            _context.Shops.Add(shop);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetShop), new { id = shop.Id }, shop);
+            var shop = new Shop
+            {
+                Name = dto.Name,
+                Category = dto.Category,
+                PriceRange = dto.PriceRange,
+                Description = dto.Description,
+                Latitude = dto.Latitude,
+                Longitude = dto.Longitude,
+                AudioFilePath = dto.AudioFilePath,
+                ImagePath = dto.ImagePath,
+                OpenTime = dto.OpenTime,
+                CloseTime = dto.CloseTime,
+                IsOpenNow = dto.IsOpenNow,
+                NarrationText = dto.NarrationText,
+                NarrationLanguage = dto.NarrationLanguage,
+                OwnerId = dto.OwnerId
+            };
+
+            var created = await _shopRepo.CreateAsync(shop);
+            return CreatedAtAction(nameof(GetShop), new { id = created.Id }, created);
         }
 
         // PUT: api/shops/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateShop(int id, Shop shop)
+        public async Task<IActionResult> UpdateShop(int id, ShopDto dto)
         {
-            if (id != shop.Id) return BadRequest();
-            _context.Entry(shop).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
+            var shop = new Shop
+            {
+                Name = dto.Name,
+                Category = dto.Category,
+                PriceRange = dto.PriceRange,
+                Description = dto.Description,
+                Latitude = dto.Latitude,
+                Longitude = dto.Longitude,
+                AudioFilePath = dto.AudioFilePath,
+                ImagePath = dto.ImagePath,
+                OpenTime = dto.OpenTime,
+                CloseTime = dto.CloseTime,
+                IsOpenNow = dto.IsOpenNow,
+                NarrationText = dto.NarrationText,
+                NarrationLanguage = dto.NarrationLanguage
+            };
+
+            var success = await _shopRepo.UpdateAsync(id, shop);
+            if (!success) return NotFound();
             return NoContent();
         }
 
@@ -55,10 +95,8 @@ namespace FoodMapAPI.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteShop(int id)
         {
-            var shop = await _context.Shops.FindAsync(id);
-            if (shop == null) return NotFound();
-            _context.Shops.Remove(shop);
-            await _context.SaveChangesAsync();
+            var success = await _shopRepo.DeleteAsync(id);
+            if (!success) return NotFound();
             return NoContent();
         }
     }
