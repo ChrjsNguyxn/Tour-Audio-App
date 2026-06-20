@@ -93,7 +93,20 @@ namespace Quan4.AdminApi.Controllers
             return Ok(new { message = $"Đã duyệt quán '{vendor.Name}' hiển thị lên ứng dụng!" });
         }
 
-        // 4. API LẤY DANH SÁCH QUÁN ĂN (Dành cho Khách du lịch - Không cần Token)
+        // 4. API XÓA QUÁN ĂN
+        [HttpDelete("{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteVendor(int id)
+        {
+            var vendor = await _context.Vendors.FindAsync(id);
+            if (vendor == null) return NotFound("Không tìm thấy quán ăn!");
+            
+            _context.Vendors.Remove(vendor);
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Xóa thành công!" });
+        }
+
+        // 5. API LẤY DANH SÁCH QUÁN ĂN (Dành cho Khách du lịch - Không cần Token)
         [HttpGet]
         [AllowAnonymous] // Bỏ qua kiểm tra bảo mật cho API này
         public async Task<IActionResult> GetAllApprovedVendors()

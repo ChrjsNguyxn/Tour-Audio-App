@@ -3,7 +3,7 @@ import AdminLogin from './pages/admin/Login.jsx';
 import AdminDashboard from './pages/admin/Dashboard.jsx';
 import ProtectedRoute from './routes/ProtectedRoute.jsx';
 import AdminLayout from './components/AdminLayout.jsx'; // 1. Import cái vỏ bọc vào
-
+import ManageVendors from './pages/admin/Vendors.jsx';
 function App() {
   return (
     <Router>
@@ -19,7 +19,7 @@ function App() {
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
                     
                 {/* Chỗ này để sẵn chờ team code thêm trang nhé */}
-                {/* <Route path="/admin/vendors" element={<ManageVendors />} /> */}
+                <Route path="/admin/vendors" element={<ManageVendors />} /> {/* Thêm dòng này */}
                 {/* <Route path="/admin/users" element={<ManageUsers />} /> */}
               </Route>
 
