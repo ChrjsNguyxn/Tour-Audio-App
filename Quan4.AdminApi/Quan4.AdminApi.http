@@ -1,0 +1,6 @@
+@Quan4.AdminApi_HostAddress = http://localhost:5045
+
+GET {{Quan4.AdminApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

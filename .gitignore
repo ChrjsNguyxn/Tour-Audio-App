@@ -1,0 +1,12 @@
+# Bỏ qua rác của Frontend (React/Vite)
+node_modules/
+dist/
+.env
+
+# Bỏ qua rác của Backend (C# .NET)
+[Bb]in/
+[Oo]bj/
+appsettings.Development.json
+Quan4.db
+Quan4.db-shm
+Quan4.db-wal
