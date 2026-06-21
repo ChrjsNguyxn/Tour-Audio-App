@@ -1,55 +1,94 @@
-using Dapper;
 using backend.Database;
 using backend.Models;
+using Dapper;
 
 namespace backend.Repository;
 
 public class CategoryRepository
 {
-    private readonly AppDbContext _db;
+    private readonly AppDbContext _context;
 
-    public CategoryRepository(AppDbContext db)
+    public CategoryRepository(AppDbContext context)
     {
-        _db = db;
+        _context = context;
     }
 
-    /// <summary>
-    /// get all user
-    /// </summary>
     public async Task<IEnumerable<Category>> GetAllAsync()
     {
-        using var connection = _db.CreateConnection();
+        using var connection = _context.CreateConnection();
 
         return await connection.QueryAsync<Category>(
             "SELECT * FROM categories"
         );
     }
 
-    /// <summary>
-    /// get by id
-    /// </summary>
     public async Task<Category?> GetByIdAsync(int id)
     {
-        using var connection = _db.CreateConnection();
+        using var connection = _context.CreateConnection();
 
         return await connection.QueryFirstOrDefaultAsync<Category>(
-            "SELECT * FROM categories WHERE id = @Id",
+            """
+            SELECT *
+            FROM categories
+            WHERE id = @Id
+            """,
             new { Id = id }
         );
     }
 
-    /// <summary>
-    /// get by category name
-    /// </summary>
-    /// <param name="name"></param>
-    /// <returns></returns>
-    public async Task<Category?> GetByNameAsync(string name)
+    public async Task<int> CreateAsync(Category category)
     {
-        using var connection = _db.CreateConnection();
+        using var connection = _context.CreateConnection();
 
-        return await connection.QueryFirstOrDefaultAsync<Category>(
-            "SELECT * FROM categories WHERE name = @Name",
-            new { Name = name }
+        return await connection.ExecuteScalarAsync<int>(
+            """
+            INSERT INTO categories
+            (
+                name,
+                description
+            )
+            VALUES
+            (
+                @Name,
+                @Description
+            );
+
+            SELECT last_insert_rowid();
+            """,
+            category
         );
+    }
+
+    public async Task<bool> UpdateAsync(Category category)
+    {
+        using var connection = _context.CreateConnection();
+
+        var rows = await connection.ExecuteAsync(
+            """
+            UPDATE categories
+            SET
+                name = @Name,
+                description = @Description
+            WHERE id = @Id
+            """,
+            category
+        );
+
+        return rows > 0;
+    }
+
+    public async Task<bool> DeleteAsync(int id)
+    {
+        using var connection = _context.CreateConnection();
+
+        var rows = await connection.ExecuteAsync(
+            """
+            DELETE FROM categories
+            WHERE id = @Id
+            """,
+            new { Id = id }
+        );
+
+        return rows > 0;
     }
 }

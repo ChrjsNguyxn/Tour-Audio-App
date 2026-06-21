@@ -1,95 +1,179 @@
-using Dapper;
 using backend.Database;
 using backend.Models;
+using Dapper;
 
 namespace backend.Repository;
 
 public class UserRepository
 {
-    private readonly AppDbContext _db;
+    private readonly AppDbContext _context;
 
-    public UserRepository(AppDbContext db)
+    public UserRepository(AppDbContext context)
     {
-        _db = db;
+        _context = context;
     }
 
-    /// <summary>
-    /// Get all users from database.
-    /// </summary>
+    //========
+    // GET
+    //========
     public async Task<IEnumerable<User>> GetAllAsync()
     {
-        using var connection = _db.CreateConnection();
+        using var connection = _context.CreateConnection();
 
         return await connection.QueryAsync<User>(
             "SELECT * FROM users"
         );
     }
 
-    /// <summary>
-    /// Get a user by their ID.
-    /// Returns null if user does not exist.
-    /// </summary>
     public async Task<User?> GetByIdAsync(int id)
     {
-        using var connection = _db.CreateConnection();
+        using var connection = _context.CreateConnection();
 
         return await connection.QueryFirstOrDefaultAsync<User>(
-            "SELECT * FROM users WHERE id = @Id",
+            """
+            SELECT *
+            FROM users
+            WHERE id = @Id
+            """,
             new { Id = id }
         );
     }
 
-    /// <summary>
-    /// Find a user by username.
-    /// Useful for login and duplicate username checks.
-    /// </summary>
     public async Task<User?> GetByUsernameAsync(string username)
     {
-        using var connection = _db.CreateConnection();
+        using var connection = _context.CreateConnection();
 
         return await connection.QueryFirstOrDefaultAsync<User>(
-            "SELECT * FROM users WHERE username = @Username",
+            """
+            SELECT *
+            FROM users
+            WHERE username = @Username
+            """,
             new { Username = username }
         );
     }
 
-    /// <summary>
-    /// Find a user by email.
-    /// Useful for registration and duplicate email checks.
-    /// </summary>
     public async Task<User?> GetByEmailAsync(string email)
     {
-        using var connection = _db.CreateConnection();
+        using var connection = _context.CreateConnection();
 
         return await connection.QueryFirstOrDefaultAsync<User>(
-            "SELECT * FROM users WHERE email = @Email",
+            """
+            SELECT *
+            FROM users
+            WHERE email = @Email
+            """,
             new { Email = email }
         );
     }
 
     /// <summary>
-    /// Get all users with a specific role.
-    /// Example: admin, owner.
+    /// get user by role
     /// </summary>
+    /// <param name="role"></param>
+    /// <returns></returns>
     public async Task<IEnumerable<User>> GetByRoleAsync(string role)
     {
-        using var connection = _db.CreateConnection();
+        using var connection = _context.CreateConnection();
 
         return await connection.QueryAsync<User>(
-            "SELECT * FROM users WHERE role = @Role",
+            """
+            SELECT *
+            FROM users
+            WHERE role = @Role
+            """,
             new { Role = role }
         );
     }
 
-    /// <summary>
-    /// Get all active users.
-    /// </summary>
-    public async Task<IEnumerable<User>> GetActiveUsersAsync()
-    {
-        using var connection = _db.CreateConnection();
+    //=========
+    // CREATE
+    //=========
 
-        return await connection.QueryAsync<User>(
-            "SELECT * FROM users WHERE is_active = 1"
+    public async Task<int> CreateAsync(User user)
+    {
+        using var connection = _context.CreateConnection();
+
+        return await connection.ExecuteScalarAsync<int>(
+            """
+            INSERT INTO users
+            (
+                username,
+                password,
+                role,
+                full_name,
+                email,
+                avatar_url
+            )
+            VALUES
+            (
+                @Username,
+                @Password,
+                @Role,
+                @FullName,
+                @Email,
+                @AvatarUrl
+            );
+
+            SELECT last_insert_rowid();
+            """,
+            user
         );
     }
+
+
+    //=========
+    // UPDATE
+    //=========
+    
+    public async Task<bool> UpdateAsync(User user)
+    {
+        using var connection = _context.CreateConnection();
+
+        var rows = await connection.ExecuteAsync(
+            """
+            UPDATE users
+            SET
+                full_name = @FullName,
+                email = @Email,
+                avatar_url = @AvatarUrl,
+                role = @Role,
+                is_active = @IsActive
+            WHERE id = @Id
+            """,
+            user
+        );
+
+        return rows > 0;
+    }
+
+    //================================
+    // DISABLE - is_active = false/0
+    //================================
+
+
+    /// <summary>
+    /// Disable user(is_active = false or 0)
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    public async Task<bool> DisableAsync(int id)
+    {
+        using var connection = _context.CreateConnection();
+
+        var rows = await connection.ExecuteAsync(
+            """
+            UPDATE users
+            SET is_active = 0
+            WHERE id = @Id
+            """,
+            new { Id = id }
+        );
+
+        return rows > 0;
+    }
 }
+
+
+
+// finish user repo

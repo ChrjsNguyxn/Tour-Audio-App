@@ -8,18 +8,71 @@ export default function POIInfoPanel({ poi }) {
   }
 
   return (
-    <div className="p-4 space-y-3">
-      <h2 className="text-xl font-bold">{poi.name}</h2>
+    <div className="h-full overflow-y-auto">
 
-      <div className="h-40 bg-gray-200 rounded" />
+      {/* IMAGE */}
+      <div className="h-56 bg-gray-200 flex items-center justify-center text-gray-500">
+        {poi.imagePath ? (
+          <img
+            src={poi.imagePath}
+            alt={poi.name}
+            className="w-full h-56 object-cover"
+          />
+          ) : (
+            <div className="h-56 bg-gray-200 flex items-center justify-center text-gray-500">
+              Không có ảnh
+            </div>
+          )
+        }
+      </div>
 
-      <p className="text-sm text-gray-600">
-        {poi.description}
-      </p>
+      {/* CONTENT */}
+      <div className="p-4 space-y-4">
 
-      <button className="w-full py-2 bg-blue-500 text-white rounded">
-        Navigate here
-      </button>
+        {/* NAME */}
+        <h2 className="text-2xl font-bold">
+          {poi.name}
+        </h2>
+
+        {/* BASIC INFO */}
+        <div className="space-y-2 text-sm text-gray-600">
+
+          <div>
+            <span className="font-semibold">Danh mục:</span>{" "}
+            {poi.categoryName}
+          </div>
+
+          <div>
+            <span className="font-semibold">Giờ mở cửa:</span>{" "}
+            {poi.openTime} - {poi.closeTime}
+          </div>
+
+          <div>
+            <span className="font-semibold">Tầm giá:</span>{" "}
+            {poi.priceRange}
+          </div>
+
+        </div>
+
+        {/* DESCRIPTION */}
+        <div>
+          <h3 className="font-semibold mb-2">
+            Mô tả
+          </h3>
+
+          <p className="text-gray-700">
+            {poi.description}
+          </p>
+        </div>
+
+        {/* ACTION */}
+        <button
+          className="w-full py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Navigate Here
+        </button>
+
+      </div>
     </div>
   );
 }

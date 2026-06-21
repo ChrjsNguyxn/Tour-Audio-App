@@ -6,17 +6,26 @@ namespace backend.DTOs;
 /// CreatedAt
 /// IsApproved
 /// </summary>
-public class VendorResponseDto
+
+public class EateryResponseDto
 {
     public int Id { get; set; }
 
-    public string Name { get; set; } = string.Empty;
+    public string Name { get; set; } = "";
+
+    public string Address { get; set; } = "";
+
+    public int OwnerId { get; set; }
+
+    public int CategoryId { get; set; }
+
+    public string CategoryName { get; set; } = "";
 
     public string? PriceRange { get; set; }
 
-    public string? DescriptionVi { get; set; }
+    public string? Description { get; set; }
 
-    public string? DescriptionEn { get; set; }
+    public double Rating { get; set; }
 
     public double Latitude { get; set; }
 
@@ -30,5 +39,5 @@ public class VendorResponseDto
 
     public string? CloseTime { get; set; }
 
-    public int CategoryId { get; set; }
+    public bool IsApproved { get; set; }
 }
