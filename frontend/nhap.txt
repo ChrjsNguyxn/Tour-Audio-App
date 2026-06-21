@@ -1,0 +1,2 @@
+- Sửa lại DTO vendor để thêm category.
+- Cập nhật POIInfoPanel
