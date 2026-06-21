@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using FoodMapAPI.DTOs;
+using Microsoft.EntityFrameworkCore;
+using FoodMapAPI.Data;
 using FoodMapAPI.Models;
-using FoodMapAPI.Repository;
 
 namespace FoodMapAPI.Controllers
 {
@@ -9,53 +9,34 @@ namespace FoodMapAPI.Controllers
     [Route("api/[controller]")]
     public class MenuItemsController : ControllerBase
     {
-        private readonly IMenuItemRepository _menuRepo;
-
-        public MenuItemsController(IMenuItemRepository menuRepo)
-        {
-            _menuRepo = menuRepo;
-        }
+        private readonly AppDbContext _context;
+        public MenuItemsController(AppDbContext context) { _context = context; }
 
         // GET: api/menuitems/shop/5
         [HttpGet("shop/{shopId}")]
         public async Task<ActionResult<IEnumerable<MenuItem>>> GetByShop(int shopId)
         {
-            return Ok(await _menuRepo.GetByShopIdAsync(shopId));
+            return await _context.MenuItems
+                .Where(m => m.ShopId == shopId)
+                .ToListAsync();
         }
 
         // POST: api/menuitems
         [HttpPost]
-        public async Task<ActionResult<MenuItem>> Create(MenuItemDto dto)
+        public async Task<ActionResult<MenuItem>> Create(MenuItem item)
         {
-            var item = new MenuItem
-            {
-                Name = dto.Name,
-                ImagePath = dto.ImagePath,
-                Quantity = dto.Quantity,
-                Price = dto.Price,
-                Description = dto.Description,
-                ShopId = dto.ShopId
-            };
-
-            var created = await _menuRepo.CreateAsync(item);
-            return Ok(created);
+            _context.MenuItems.Add(item);
+            await _context.SaveChangesAsync();
+            return Ok(item);
         }
 
         // PUT: api/menuitems/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, MenuItemDto dto)
+        public async Task<IActionResult> Update(int id, MenuItem item)
         {
-            var item = new MenuItem
-            {
-                Name = dto.Name,
-                ImagePath = dto.ImagePath,
-                Quantity = dto.Quantity,
-                Price = dto.Price,
-                Description = dto.Description
-            };
-
-            var success = await _menuRepo.UpdateAsync(id, item);
-            if (!success) return NotFound();
+            if (id != item.Id) return BadRequest();
+            _context.Entry(item).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
             return NoContent();
         }
 
@@ -63,8 +44,10 @@ namespace FoodMapAPI.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var success = await _menuRepo.DeleteAsync(id);
-            if (!success) return NotFound();
+            var item = await _context.MenuItems.FindAsync(id);
+            if (item == null) return NotFound();
+            _context.MenuItems.Remove(item);
+            await _context.SaveChangesAsync();
             return NoContent();
         }
     }

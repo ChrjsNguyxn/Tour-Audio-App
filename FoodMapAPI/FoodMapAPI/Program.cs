@@ -1,5 +1,4 @@
 using FoodMapAPI.Data;
-using FoodMapAPI.Repository;
 using FoodMapAPI.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,7 +10,7 @@ builder.Services.AddSwaggerGen();
 
 // Kết nối SQLite
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlite("Data Source=foodmap.db"));
 
 // Cho phép React gọi API (CORS)
 builder.Services.AddCors(options =>
@@ -19,11 +18,8 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll", policy =>
         policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 });
-builder.Services.AddScoped<IOwnerRepository, OwnerRepository>();
-builder.Services.AddScoped<IShopRepository, ShopRepository>();
-builder.Services.AddScoped<IMenuItemRepository, MenuItemRepository>();
-var app = builder.Build();
 
+var app = builder.Build();
 // Seed dữ liệu mẫu
 // Seed dữ liệu mẫu
 using (var scope = app.Services.CreateScope())

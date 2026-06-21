@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using FoodMapAPI.DTOs;
+using Microsoft.EntityFrameworkCore;
+using FoodMapAPI.Data;
 using FoodMapAPI.Models;
-using FoodMapAPI.Repository;
 
 namespace FoodMapAPI.Controllers
 {
@@ -9,78 +9,61 @@ namespace FoodMapAPI.Controllers
     [Route("api/[controller]")]
     public class OwnersController : ControllerBase
     {
-        private readonly IOwnerRepository _ownerRepo;
+        private readonly AppDbContext _context;
 
-        public OwnersController(IOwnerRepository ownerRepo)
+        public OwnersController(AppDbContext context)
         {
-            _ownerRepo = ownerRepo;
+            _context = context;
         }
 
         // POST: api/owners/register
         [HttpPost("register")]
-        public async Task<ActionResult<OwnerResponseDto>> Register(RegisterOwnerDto dto)
+        public async Task<ActionResult<Owner>> Register(Owner owner)
         {
-            var existing = await _ownerRepo.GetByEmailAsync(dto.Email);
+            // Kiểm tra email đã tồn tại chưa
+            var existing = await _context.Owners
+                .FirstOrDefaultAsync(o => o.Email == owner.Email);
             if (existing != null)
                 return BadRequest("Email đã được sử dụng.");
 
-            var owner = new Owner
-            {
-                FullName = dto.FullName,
-                Email = dto.Email,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-                PhoneNumber = dto.PhoneNumber,
-                Status = "Pending",
-                CreatedAt = DateTime.Now
-            };
+            // Hash password đơn giản (tạm thời)
+            owner.PasswordHash = BCrypt.Net.BCrypt.HashPassword(owner.PasswordHash);
+            owner.CreatedAt = DateTime.Now;
 
-            var created = await _ownerRepo.CreateAsync(owner);
-
-            return Ok(new OwnerResponseDto
-            {
-                Id = created.Id,
-                FullName = created.FullName,
-                Email = created.Email,
-                PhoneNumber = created.PhoneNumber,
-                Status = created.Status,
-                CreatedAt = created.CreatedAt
-            });
+            _context.Owners.Add(owner);
+            await _context.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetOwner), new { id = owner.Id }, owner);
         }
 
         // POST: api/owners/login
         [HttpPost("login")]
-        public async Task<ActionResult> Login(LoginOwnerDto dto)
+        public async Task<ActionResult> Login([FromBody] LoginRequest request)
         {
-            var owner = await _ownerRepo.GetByEmailAsync(dto.Email);
+            var owner = await _context.Owners
+                .FirstOrDefaultAsync(o => o.Email == request.Email);
 
-            if (owner == null || !BCrypt.Net.BCrypt.Verify(dto.Password, owner.PasswordHash))
+            if (owner == null || !BCrypt.Net.BCrypt.Verify(request.Password, owner.PasswordHash))
                 return Unauthorized("Email hoặc mật khẩu không đúng.");
-
-            if (owner.Status == "Pending")
-                return Unauthorized("Tài khoản đang chờ Admin duyệt.");
-
-            if (owner.Status == "Locked")
-                return Unauthorized("Tài khoản đã bị khóa.");
 
             return Ok(new { message = "Đăng nhập thành công", ownerId = owner.Id, name = owner.FullName });
         }
 
         // GET: api/owners/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<OwnerResponseDto>> GetOwner(int id)
+        public async Task<ActionResult<Owner>> GetOwner(int id)
         {
-            var owner = await _ownerRepo.GetByIdAsync(id);
+            var owner = await _context.Owners
+                .Include(o => o.Shops)
+                .FirstOrDefaultAsync(o => o.Id == id);
             if (owner == null) return NotFound();
-
-            return Ok(new OwnerResponseDto
-            {
-                Id = owner.Id,
-                FullName = owner.FullName,
-                Email = owner.Email,
-                PhoneNumber = owner.PhoneNumber,
-                Status = owner.Status,
-                CreatedAt = owner.CreatedAt
-            });
+            return owner;
         }
+    }
+
+    // Class phụ cho Login
+    public class LoginRequest
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
     }
 }
