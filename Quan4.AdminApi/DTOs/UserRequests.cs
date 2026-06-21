@@ -1,9 +1,8 @@
 namespace Quan4.AdminApi.DTOs
 {
-    public class CreateUserRequest
+    public class CreateCategoryRequestDto
     {
-        public string Username { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
-        public string Role { get; set; } = "admin"; 
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
     }
 }

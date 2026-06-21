@@ -1,129 +1,67 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Quan4.AdminApi.Data;
 using Quan4.AdminApi.DTOs;
-using Quan4.AdminApi.Models;
+using Quan4.AdminApi.Services;
 using System.Security.Claims;
 
 namespace Quan4.AdminApi.Controllers
 {
     [Route("api/v1/vendors")]
     [ApiController]
-    [Authorize] // Bắt buộc đăng nhập mới được xài các API này
+    [Authorize]
     public class VendorController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly VendorService _vendorService;
 
-        public VendorController(AppDbContext context)
+        // Tiêm VendorService vào Controller
+        public VendorController(VendorService vendorService)
         {
-            _context = context;
+            _vendorService = vendorService;
         }
 
-        // 1. API TẠO QUÁN ĂN MỚI (Dành cho Minh tham khảo hoặc chủ quán tạo)
         [HttpPost]
-        public async Task<IActionResult> CreateVendor(CreateVendorRequest request)
+        public async Task<IActionResult> CreateVendor(CreateVendorRequestDto request)
         {
-            // Lấy ID của người đang đăng nhập từ Token
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userIdClaim == null) return Unauthorized();
             int currentUserId = int.Parse(userIdClaim);
 
-            // Kiểm tra danh mục có tồn tại không
-            var categoryExists = await _context.Categories.AnyAsync(c => c.Id == request.CategoryId);
-            if (!categoryExists) return BadRequest("Danh mục (Category) không tồn tại!");
-
-            var vendor = new Vendor
-            {
-                Name = request.Name,
-                CategoryId = request.CategoryId,
-                PriceRange = request.PriceRange,
-                Description = request.Description,
-                Latitude = request.Latitude,
-                Longitude = request.Longitude,
-                OpenTime = request.OpenTime,
-                CloseTime = request.CloseTime,
-                OwnerId = currentUserId,
-                IsApproved = false // Mặc định tạo xong phải đợi Admin duyệt
-            };
-
-            _context.Vendors.Add(vendor);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = $"Đã gửi yêu cầu tạo quán '{request.Name}' thành công. Chờ Admin duyệt!" });
+            var result = await _vendorService.CreateVendorAsync(request, currentUserId);
+            
+            if (!result.Success) return BadRequest(result.Message);
+            return Ok(new { message = result.Message });
         }
 
-        // 2. API LẤY DANH SÁCH CÁC QUÁN CHƯA DUYỆT (Quyền lực của Admin Thụy)
         [HttpGet("unapproved")]
         public async Task<IActionResult> GetUnapprovedVendors()
         {
-            var vendors = await _context.Vendors
-                .Where(v => v.IsApproved == false)
-                .Include(v => v.Category)
-                .Include(v => v.Owner)
-                .Select(v => new VendorResponse
-                {
-                    Id = v.Id,
-                    Name = v.Name,
-                    CategoryName = v.Category != null ? v.Category.Name : "Chưa phân loại",
-                    PriceRange = v.PriceRange,
-                    Description = v.Description,
-                    Latitude = v.Latitude,
-                    Longitude = v.Longitude,
-                    OpenTime = v.OpenTime,
-                    CloseTime = v.CloseTime,
-                    IsApproved = v.IsApproved,
-                    OwnerName = v.Owner != null ? v.Owner.FullName : "Ẩn danh"
-                })
-                .ToListAsync();
-
+            var vendors = await _vendorService.GetUnapprovedVendorsAsync();
             return Ok(vendors);
         }
 
-        // 3. API DUYỆT QUÁN ĂN (Quyền lực của Admin Thụy)
         [HttpPut("{id}/approve")]
         public async Task<IActionResult> ApproveVendor(int id)
         {
-            var vendor = await _context.Vendors.FindAsync(id);
-            if (vendor == null) return NotFound("Không tìm thấy quán ăn này!");
-
-            vendor.IsApproved = true; // Chuyển trạng thái thành Đã Duyệt
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = $"Đã duyệt quán '{vendor.Name}' hiển thị lên ứng dụng!" });
+            var result = await _vendorService.ApproveVendorAsync(id);
+            
+            if (!result.Success) return NotFound(result.Message);
+            return Ok(new { message = result.Message });
         }
 
-        // 4. API XÓA QUÁN ĂN
         [HttpDelete("{id}")]
-        [Authorize]
         public async Task<IActionResult> DeleteVendor(int id)
         {
-            var vendor = await _context.Vendors.FindAsync(id);
-            if (vendor == null) return NotFound("Không tìm thấy quán ăn!");
+            var result = await _vendorService.DeleteVendorAsync(id);
             
-            _context.Vendors.Remove(vendor);
-            await _context.SaveChangesAsync();
-            return Ok(new { message = "Xóa thành công!" });
+            if (!result.Success) return NotFound(result.Message);
+            return Ok(new { message = result.Message });
         }
 
-        // 5. API LẤY DANH SÁCH QUÁN ĂN (Dành cho Khách du lịch - Không cần Token)
         [HttpGet]
-        [AllowAnonymous] // Bỏ qua kiểm tra bảo mật cho API này
+        [AllowAnonymous]
         public async Task<IActionResult> GetAllApprovedVendors()
         {
-            var vendors = await _context.Vendors
-                // Chỉ lấy những quán đã được Admin Thụy duyệt
-                .Where(v => v.IsApproved == true)
-                .Select(v => new 
-                { 
-                    v.Id, 
-                    v.Name, 
-                    v.PriceRange, 
-                    v.Description,
-                    CategoryName = v.Category != null ? v.Category.Name : "Chưa phân loại"
-                })
-                .ToListAsync();
-
+            var vendors = await _vendorService.GetAllApprovedVendorsAsync();
             return Ok(vendors);
         }
     }

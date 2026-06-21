@@ -198,13 +198,24 @@ const ManageVendors = () => {
                 width={700}
             >
                 <Form form={form} layout="vertical" onFinish={handleAddVendor}>
-                    <Form.Item name="name" label="Tên quán" rules={[{ required: true, message: 'Bắt buộc nhập' }]}>
-                        <Input placeholder="Nhập tên quán..." />
-                    </Form.Item>
-                    
+                    {/* Hàng 1: Tên quán và Địa chỉ */}
                     <Row gutter={16}>
                         <Col span={12}>
-                            {/* ĐÃ THAY Ô NHẬP SỐ THÀNH MENU DROP-DOWN CHỌN DANH MỤC */}
+                            <Form.Item name="name" label="Tên quán" rules={[{ required: true, message: 'Bắt buộc nhập' }]}>
+                                <Input placeholder="Nhập tên quán..." />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            {/* --- Ô NHẬP ĐỊA CHỈ MỚI THÊM VÀO ĐÂY --- */}
+                            <Form.Item name="address" label="Địa chỉ cụ thể" rules={[{ required: true, message: 'Bắt buộc nhập địa chỉ' }]}>
+                                <Input placeholder="Ví dụ: 123 Đường Tôn Đản, Quận 4..." />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    
+                    {/* Hàng 2: Danh mục và Mức giá */}
+                    <Row gutter={16}>
+                        <Col span={12}>
                             <Form.Item name="categoryId" label="Danh mục quán" rules={[{ required: true, message: 'Vui lòng chọn danh mục' }]}>
                                 <Select placeholder="-- Chọn danh mục --" className="w-full">
                                     {categories.map((cat) => (
@@ -226,19 +237,21 @@ const ManageVendors = () => {
                         <Input.TextArea rows={3} placeholder="Mô tả điểm nổi bật của quán..." />
                     </Form.Item>
                     
+                    {/* Hàng 3: Tọa độ bản đồ */}
                     <Row gutter={16}>
                         <Col span={12}>
-                            <Form.Item name="latitude" label="Vĩ độ (Latitude)">
-                                <InputNumber className="w-full" />
+                            <Form.Item name="latitude" label="Vĩ độ (Latitude)" rules={[{ required: true, message: 'Bắt buộc nhập' }]}>
+                                <InputNumber className="w-full" placeholder="VD: 10.76" />
                             </Form.Item>
                         </Col>
                         <Col span={12}>
-                            <Form.Item name="longitude" label="Kinh độ (Longitude)">
-                                <InputNumber className="w-full" />
+                            <Form.Item name="longitude" label="Kinh độ (Longitude)" rules={[{ required: true, message: 'Bắt buộc nhập' }]}>
+                                <InputNumber className="w-full" placeholder="VD: 106.7" />
                             </Form.Item>
                         </Col>
                     </Row>
                     
+                    {/* Hàng 4: Thời gian */}
                     <Row gutter={16}>
                         <Col span={12}>
                             <Form.Item name="openTime" label="Giờ mở cửa" rules={[{ required: true, message: 'Bắt buộc nhập' }]}>

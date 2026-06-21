@@ -11,8 +11,8 @@ using Quan4.AdminApi.Data;
 namespace Quan4.AdminApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260617144002_FinalizeVendorAndMenuSchema")]
-    partial class FinalizeVendorAndMenuSchema
+    [Migration("20260621104553_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -117,26 +117,26 @@ namespace Quan4.AdminApi.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("AudioFilePath")
+                    b.Property<string>("Address")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AudioFilePath")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("CategoryId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("CloseTime")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ImagePath")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("IsApproved")
@@ -153,15 +153,16 @@ namespace Quan4.AdminApi.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("OpenTime")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<int>("OwnerId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("PriceRange")
-                        .IsRequired()
                         .HasColumnType("TEXT");
+
+                    b.Property<double>("Rating")
+                        .HasColumnType("REAL");
 
                     b.HasKey("Id");
 
@@ -169,13 +170,13 @@ namespace Quan4.AdminApi.Migrations
 
                     b.HasIndex("OwnerId");
 
-                    b.ToTable("Vendors");
+                    b.ToTable("vendors");
                 });
 
             modelBuilder.Entity("Quan4.AdminApi.Models.MenuItem", b =>
                 {
                     b.HasOne("Quan4.AdminApi.Models.Vendor", "Vendor")
-                        .WithMany()
+                        .WithMany("MenuItems")
                         .HasForeignKey("VendorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -200,6 +201,11 @@ namespace Quan4.AdminApi.Migrations
                     b.Navigation("Category");
 
                     b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("Quan4.AdminApi.Models.Vendor", b =>
+                {
+                    b.Navigation("MenuItems");
                 });
 #pragma warning restore 612, 618
         }

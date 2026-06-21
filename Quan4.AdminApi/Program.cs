@@ -5,12 +5,16 @@ using Scalar.AspNetCore; // Thêm thư viện Scalar
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Quan4.AdminApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. Cấu hình Database SQLite
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Đăng ký Service vào hệ thống (thường đặt ngay dưới dòng AddDbContext)
+builder.Services.AddScoped<VendorService>();
 
 // 2. Thêm Controllers
 builder.Services.AddControllers();
