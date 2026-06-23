@@ -1,94 +1,51 @@
-using backend.Database;
-using backend.Models;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Microsoft.Data.Sqlite;
 using Dapper;
+using Microsoft.Extensions.Configuration;
+using Backend.DTOs.CategoryDTO;
 
-namespace backend.Repository;
-
-public class CategoryRepository
+namespace backend.Repository
 {
-    private readonly AppDbContext _context;
-
-    public CategoryRepository(AppDbContext context)
+    public class CategoryRepository
     {
-        _context = context;
-    }
+        private readonly string _connectionString;
 
-    public async Task<IEnumerable<Category>> GetAllAsync()
-    {
-        using var connection = _context.CreateConnection();
+        public CategoryRepository(IConfiguration configuration)
+        {
+            _connectionString = configuration.GetConnectionString("DefaultConnection") ?? "Data Source=Database/foodtour.db";
+        }
 
-        return await connection.QueryAsync<Category>(
-            "SELECT * FROM categories"
-        );
-    }
+        public async Task<IEnumerable<CategoryResponseDto>> GetAllCategoriesAsync()
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            var sql = @"
+                SELECT 
+                    id AS Id, name AS Name, description AS Description, created_at AS CreatedAt 
+                FROM categories
+                ORDER BY id DESC";
+            return await connection.QueryAsync<CategoryResponseDto>(sql);
+        }
 
-    public async Task<Category?> GetByIdAsync(int id)
-    {
-        using var connection = _context.CreateConnection();
+        public async Task<int> CreateCategoryAsync(CreateCategoryRequestDto request)
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            var sql = @"
+                INSERT INTO categories (name, description) 
+                VALUES (@Name, @Description);
+                SELECT last_insert_rowid();";
+            return await connection.ExecuteScalarAsync<int>(sql, request);
+        }
 
-        return await connection.QueryFirstOrDefaultAsync<Category>(
-            """
-            SELECT *
-            FROM categories
-            WHERE id = @Id
-            """,
-            new { Id = id }
-        );
-    }
-
-    public async Task<int> CreateAsync(Category category)
-    {
-        using var connection = _context.CreateConnection();
-
-        return await connection.ExecuteScalarAsync<int>(
-            """
-            INSERT INTO categories
-            (
-                name,
-                description
-            )
-            VALUES
-            (
-                @Name,
-                @Description
-            );
-
-            SELECT last_insert_rowid();
-            """,
-            category
-        );
-    }
-
-    public async Task<bool> UpdateAsync(Category category)
-    {
-        using var connection = _context.CreateConnection();
-
-        var rows = await connection.ExecuteAsync(
-            """
-            UPDATE categories
-            SET
-                name = @Name,
-                description = @Description
-            WHERE id = @Id
-            """,
-            category
-        );
-
-        return rows > 0;
-    }
-
-    public async Task<bool> DeleteAsync(int id)
-    {
-        using var connection = _context.CreateConnection();
-
-        var rows = await connection.ExecuteAsync(
-            """
-            DELETE FROM categories
-            WHERE id = @Id
-            """,
-            new { Id = id }
-        );
-
-        return rows > 0;
+        public async Task<bool> UpdateCategoryAsync(int id, UpdateCategoryRequestDto request)
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            var sql = @"
+                UPDATE categories 
+                SET name = @Name, description = @Description 
+                WHERE id = @Id";
+            var affectedRows = await connection.ExecuteAsync(sql, new { request.Name, request.Description, Id = id });
+            return affectedRows > 0;
+        }
     }
 }

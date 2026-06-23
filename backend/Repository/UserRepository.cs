@@ -1,179 +1,49 @@
-using backend.Database;
-using backend.Models;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Microsoft.Data.Sqlite;
 using Dapper;
 
-namespace backend.Repository;
+using Microsoft.Extensions.Configuration;
+using Backend.DTOs.UserDTO;
 
-public class UserRepository
+namespace backend.Repository
 {
-    private readonly AppDbContext _context;
-
-    public UserRepository(AppDbContext context)
+    public class UserRepository
     {
-        _context = context;
-    }
+        private readonly string _connectionString;
 
-    //========
-    // GET
-    //========
-    public async Task<IEnumerable<User>> GetAllAsync()
-    {
-        using var connection = _context.CreateConnection();
+        public UserRepository(IConfiguration configuration)
+        {
+            _connectionString = configuration.GetConnectionString("DefaultConnection") ?? "Data Source=Database/foodtour.db";
+        }
 
-        return await connection.QueryAsync<User>(
-            "SELECT * FROM users"
-        );
-    }
+        // 1. Lấy danh sách tất cả User (Dành cho Admin)
+        public async Task<IEnumerable<UserDetailResponseDto>> GetAllUsersForAdminAsync()
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            var sql = @"
+                SELECT 
+                    id AS Id, 
+                    username AS Username, 
+                    full_name AS FullName, 
+                    email AS Email, 
+                    avatar_url AS AvatarUrl, 
+                    role AS Role, 
+                    is_active AS IsActive, 
+                    created_at AS CreatedAt 
+                FROM users
+                ORDER BY id DESC";
+            
+            return await connection.QueryAsync<UserDetailResponseDto>(sql);
+        }
 
-    public async Task<User?> GetByIdAsync(int id)
-    {
-        using var connection = _context.CreateConnection();
-
-        return await connection.QueryFirstOrDefaultAsync<User>(
-            """
-            SELECT *
-            FROM users
-            WHERE id = @Id
-            """,
-            new { Id = id }
-        );
-    }
-
-    public async Task<User?> GetByUsernameAsync(string username)
-    {
-        using var connection = _context.CreateConnection();
-
-        return await connection.QueryFirstOrDefaultAsync<User>(
-            """
-            SELECT *
-            FROM users
-            WHERE username = @Username
-            """,
-            new { Username = username }
-        );
-    }
-
-    public async Task<User?> GetByEmailAsync(string email)
-    {
-        using var connection = _context.CreateConnection();
-
-        return await connection.QueryFirstOrDefaultAsync<User>(
-            """
-            SELECT *
-            FROM users
-            WHERE email = @Email
-            """,
-            new { Email = email }
-        );
-    }
-
-    /// <summary>
-    /// get user by role
-    /// </summary>
-    /// <param name="role"></param>
-    /// <returns></returns>
-    public async Task<IEnumerable<User>> GetByRoleAsync(string role)
-    {
-        using var connection = _context.CreateConnection();
-
-        return await connection.QueryAsync<User>(
-            """
-            SELECT *
-            FROM users
-            WHERE role = @Role
-            """,
-            new { Role = role }
-        );
-    }
-
-    //=========
-    // CREATE
-    //=========
-
-    public async Task<int> CreateAsync(User user)
-    {
-        using var connection = _context.CreateConnection();
-
-        return await connection.ExecuteScalarAsync<int>(
-            """
-            INSERT INTO users
-            (
-                username,
-                password,
-                role,
-                full_name,
-                email,
-                avatar_url
-            )
-            VALUES
-            (
-                @Username,
-                @Password,
-                @Role,
-                @FullName,
-                @Email,
-                @AvatarUrl
-            );
-
-            SELECT last_insert_rowid();
-            """,
-            user
-        );
-    }
-
-
-    //=========
-    // UPDATE
-    //=========
-    
-    public async Task<bool> UpdateAsync(User user)
-    {
-        using var connection = _context.CreateConnection();
-
-        var rows = await connection.ExecuteAsync(
-            """
-            UPDATE users
-            SET
-                full_name = @FullName,
-                email = @Email,
-                avatar_url = @AvatarUrl,
-                role = @Role,
-                is_active = @IsActive
-            WHERE id = @Id
-            """,
-            user
-        );
-
-        return rows > 0;
-    }
-
-    //================================
-    // DISABLE - is_active = false/0
-    //================================
-
-
-    /// <summary>
-    /// Disable user(is_active = false or 0)
-    /// </summary>
-    /// <param name="id"></param>
-    /// <returns></returns>
-    public async Task<bool> DisableAsync(int id)
-    {
-        using var connection = _context.CreateConnection();
-
-        var rows = await connection.ExecuteAsync(
-            """
-            UPDATE users
-            SET is_active = 0
-            WHERE id = @Id
-            """,
-            new { Id = id }
-        );
-
-        return rows > 0;
+        // 2. Quyền lực Admin: Khóa / Mở khóa tài khoản User
+        public async Task<bool> ChangeUserStatusAsync(int id, bool isActive)
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            var sql = "UPDATE users SET is_active = @IsActive WHERE id = @Id";
+            var affectedRows = await connection.ExecuteAsync(sql, new { IsActive = isActive, Id = id });
+            return affectedRows > 0;
+        }
     }
 }
-
-
-
-// finish user repo

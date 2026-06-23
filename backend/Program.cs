@@ -1,53 +1,76 @@
-using backend.Database;
+using System.Text;
 using backend.Repository;
-using backend.Services;
-using backend.Models;
-using Dapper;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// các này để các lớp trong Repository/ tự chuyển đổi tên các trường sang cho lớp trong Models/ 
-Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
-
-// cái này để cho phép frontend fetch dữ liệu từ server
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("ReactPolicy", policy =>
-    {
-        policy
-            .AllowAnyOrigin()
-            .AllowAnyHeader()
-            .AllowAnyMethod();
-    });
-});
-
-//
-builder.Services.AddSingleton<AppDbContext>();
-
-builder.Services.AddSingleton<AppDbContext>();
-
-// EATERY
-builder.Services.AddScoped<EateryRepository>();// Repository/
-builder.Services.AddScoped<EateryService>();// Service/
-
-// CATEGORY
-builder.Services.AddScoped<CategoryRepository>();
-
-// MENUITEM
-builder.Services.AddScoped<MenuItemRepository>();
-
-// USER
-builder.Services.AddScoped<UserRepository>();
-
-//
+// Add services to the container.
 builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
-//
+// ==========================================================
+// 1. ĐĂNG KÝ CÁC REPOSITORY (Dependency Injection)
+// Đảm bảo Controller nào gọi Repo đó đều có hàng để dùng
+// ==========================================================
+builder.Services.AddScoped<CategoryRepository>();
+builder.Services.AddScoped<EateryRepository>();
+builder.Services.AddScoped<UserRepository>();
+builder.Services.AddScoped<MenuItemRepository>();
+builder.Services.AddScoped<TouristRepository>();
+builder.Services.AddScoped<AuthRepository>();
+builder.Services.AddScoped<ReviewRepository>();
+builder.Services.AddScoped<DashboardRepository>();
+// ==========================================================
+// 2. CẤU HÌNH Ổ KHÓA BẢO MẬT (JWT TOKEN)
+// ==========================================================
+var key = Encoding.ASCII.GetBytes("KhoaBiMatCucKyDaiVaNguyHiemCuaDuAnFoodTourQuan4123456789");
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            ValidateIssuer = false,
+            ValidateAudience = false
+        };
+    });
+
 var app = builder.Build();
 
-app.UseCors("ReactPolicy"); // cho phép frontend fetch dữ liệu
+// ==========================================================
+// 3. CẤU HÌNH PIPELINE (Thứ tự cực kỳ quan trọng)
+// ==========================================================
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+// BẮT BUỘC: Authentication phải nằm trên Authorization
+app.UseAuthentication(); // 1. Mày là ai? (Kiểm tra Token)
+app.UseAuthorization();  // 2. Mày được phép làm gì? (Kiểm tra Quyền)
 
 app.MapControllers();
 
+using (var connection = new Microsoft.Data.Sqlite.SqliteConnection("Data Source=Database/foodtour.db"))
+{
+    connection.Open();
+    var cmd = connection.CreateCommand();
+    cmd.CommandText = @"
+        CREATE TABLE IF NOT EXISTS reviews (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            eatery_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            rating INTEGER NOT NULL,
+            comment TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );";
+    cmd.ExecuteNonQuery();
+}
 
 app.Run();
