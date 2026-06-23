@@ -21,7 +21,7 @@ builder.Services.AddScoped<MenuItemRepository>();
 builder.Services.AddScoped<TouristRepository>();
 builder.Services.AddScoped<AuthRepository>();
 builder.Services.AddScoped<ReviewRepository>();
-
+builder.Services.AddScoped<DashboardRepository>();
 // ==========================================================
 // 2. CẤU HÌNH Ổ KHÓA BẢO MẬT (JWT TOKEN)
 // ==========================================================
@@ -56,5 +56,21 @@ app.UseAuthentication(); // 1. Mày là ai? (Kiểm tra Token)
 app.UseAuthorization();  // 2. Mày được phép làm gì? (Kiểm tra Quyền)
 
 app.MapControllers();
+
+using (var connection = new Microsoft.Data.Sqlite.SqliteConnection("Data Source=Database/foodtour.db"))
+{
+    connection.Open();
+    var cmd = connection.CreateCommand();
+    cmd.CommandText = @"
+        CREATE TABLE IF NOT EXISTS reviews (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            eatery_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            rating INTEGER NOT NULL,
+            comment TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );";
+    cmd.ExecuteNonQuery();
+}
 
 app.Run();
