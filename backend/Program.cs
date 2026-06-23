@@ -1,48 +1,60 @@
-using backend.Database;
-using backend.Repository; // Lưu ý: Namespace này phải khớp với chữ hoa/thường trong thư mục của bạn
-
-using backend.Models;
-using Dapper;
+using System.Text;
+using backend.Repository;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Cấu hình Dapper (Tự động map snake_case trong DB sang PascalCase trong C#)
-Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
-
-// 2. Cấu hình CORS (Cho phép React từ cổng khác gọi API vào)
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("ReactPolicy", policy =>
-    {
-        policy.AllowAnyOrigin()
-              .AllowAnyHeader()
-              .AllowAnyMethod();
-    });
-});
-
-// 3. Đăng ký Database Context
-builder.Services.AddSingleton<AppDbContext>();
-
-// 4. Đăng ký các Repositories & Services
-builder.Services.AddScoped<CategoryRepository>();
-
-builder.Services.AddScoped<EateryRepository>();
-builder.Services.AddScoped<MenuItemRepository>();
-builder.Services.AddScoped<UserRepository>();
-
-// 5. Đăng ký Controllers (Kích hoạt khả năng đọc API)
+// Add services to the container.
 builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+// ==========================================================
+// 1. ĐĂNG KÝ CÁC REPOSITORY (Dependency Injection)
+// Đảm bảo Controller nào gọi Repo đó đều có hàng để dùng
+// ==========================================================
+builder.Services.AddScoped<CategoryRepository>();
+builder.Services.AddScoped<EateryRepository>();
+builder.Services.AddScoped<UserRepository>();
+builder.Services.AddScoped<MenuItemRepository>();
+builder.Services.AddScoped<TouristRepository>();
+builder.Services.AddScoped<AuthRepository>();
+builder.Services.AddScoped<ReviewRepository>();
+
+// ==========================================================
+// 2. CẤU HÌNH Ổ KHÓA BẢO MẬT (JWT TOKEN)
+// ==========================================================
+var key = Encoding.ASCII.GetBytes("KhoaBiMatCucKyDaiVaNguyHiemCuaDuAnFoodTourQuan4123456789");
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            ValidateIssuer = false,
+            ValidateAudience = false
+        };
+    });
 
 var app = builder.Build();
 
-// ==========================================
-// KÍCH HOẠT MIDDLEWARE PIPELINE (Thứ tự rất quan trọng)
-// ==========================================
+// ==========================================================
+// 3. CẤU HÌNH PIPELINE (Thứ tự cực kỳ quan trọng)
+// ==========================================================
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
-// Bật CORS lên trước
-app.UseCors("ReactPolicy"); 
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+// BẮT BUỘC: Authentication phải nằm trên Authorization
+app.UseAuthentication(); // 1. Mày là ai? (Kiểm tra Token)
+app.UseAuthorization();  // 2. Mày được phép làm gì? (Kiểm tra Quyền)
 
-// Ánh xạ các đường dẫn API tới các Controllers
 app.MapControllers();
 
 app.Run();

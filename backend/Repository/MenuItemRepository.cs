@@ -1,109 +1,78 @@
-using backend.Database;
-using backend.Models;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Microsoft.Data.Sqlite;
 using Dapper;
 
-namespace backend.Repository;
+using Microsoft.Extensions.Configuration;
+using backend.DTOs.MenuItemDTO;
 
-public class MenuItemRepository
+namespace backend.Repository
 {
-    private readonly AppDbContext _context;
-
-    public MenuItemRepository(AppDbContext context)
+    public class MenuItemRepository
     {
-        _context = context;
-    }
+        private readonly string _connectionString;
 
-    public async Task<IEnumerable<MenuItem>>
-        GetByEateryIdAsync(int eateryId)
-    {
-        using var connection = _context.CreateConnection();
+        public MenuItemRepository(IConfiguration configuration)
+        {
+            _connectionString = configuration.GetConnectionString("DefaultConnection") ?? "Data Source=Database/foodtour.db";
+        }
 
-        return await connection.QueryAsync<MenuItem>(
-            """
-            SELECT *
-            FROM menu_items
-            WHERE eatery_id = @EateryId
-            """,
-            new { EateryId = eateryId }
-        );
-    }
+        // 1. Lấy danh sách món ăn theo ID Quán ăn
+        public async Task<IEnumerable<MenuItemResponseDto>> GetMenuItemsByEateryIdAsync(int eateryId)
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            var sql = @"
+                SELECT 
+                    id AS Id, eatery_id AS EateryId, name AS Name, 
+                    description AS Description, price AS Price, 
+                    image_path AS ImagePath, is_available AS IsAvailable, 
+                    created_at AS CreatedAt
+                FROM menu_items
+                WHERE eatery_id = @EateryId
+                ORDER BY id DESC";
+            
+            return await connection.QueryAsync<MenuItemResponseDto>(sql, new { EateryId = eateryId });
+        }
 
-    public async Task<MenuItem?> GetByIdAsync(int id)
-    {
-        using var connection = _context.CreateConnection();
+        // 2. Thêm món ăn mới vào Menu
+        public async Task<int> CreateMenuItemAsync(int eateryId, CreateMenuItemRequestDto request)
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            var sql = @"
+                INSERT INTO menu_items (eatery_id, name, description, price, image_path, is_available) 
+                VALUES (@EateryId, @Name, @Description, @Price, @ImagePath, @IsAvailable);
+                SELECT last_insert_rowid();";
+            
+            return await connection.ExecuteScalarAsync<int>(sql, new {
+                EateryId = eateryId, request.Name, request.Description, 
+                request.Price, request.ImagePath, request.IsAvailable
+            });
+        }
 
-        return await connection.QueryFirstOrDefaultAsync<MenuItem>(
-            """
-            SELECT *
-            FROM menu_items
-            WHERE id = @Id
-            """,
-            new { Id = id }
-        );
-    }
+        // 3. Cập nhật thông tin món ăn
+        public async Task<bool> UpdateMenuItemAsync(int id, UpdateMenuItemRequestDto request)
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            var sql = @"
+                UPDATE menu_items 
+                SET name = @Name, description = @Description, price = @Price, 
+                    image_path = @ImagePath, is_available = @IsAvailable
+                WHERE id = @Id";
+            
+            var affectedRows = await connection.ExecuteAsync(sql, new { 
+                Id = id, request.Name, request.Description, 
+                request.Price, request.ImagePath, request.IsAvailable 
+            });
+            return affectedRows > 0;
+        }
 
-    public async Task<int> CreateAsync(MenuItem item)
-    {
-        using var connection = _context.CreateConnection();
-
-        return await connection.ExecuteScalarAsync<int>(
-            """
-            INSERT INTO menu_items
-            (
-                eatery_id,
-                name,
-                image_path,
-                price,
-                description
-            )
-            VALUES
-            (
-                @EateryId,
-                @Name,
-                @ImagePath,
-                @Price,
-                @Description
-            );
-
-            SELECT last_insert_rowid();
-            """,
-            item
-        );
-    }
-
-    public async Task<bool> UpdateAsync(MenuItem item)
-    {
-        using var connection = _context.CreateConnection();
-
-        var rows = await connection.ExecuteAsync(
-            """
-            UPDATE menu_items
-            SET
-                name = @Name,
-                image_path = @ImagePath,
-                price = @Price,
-                description = @Description,
-                is_available = @IsAvailable
-            WHERE id = @Id
-            """,
-            item
-        );
-
-        return rows > 0;
-    }
-
-    public async Task<bool> DeleteAsync(int id)
-    {
-        using var connection = _context.CreateConnection();
-
-        var rows = await connection.ExecuteAsync(
-            """
-            DELETE FROM menu_items
-            WHERE id = @Id
-            """,
-            new { Id = id }
-        );
-
-        return rows > 0;
+        // 4. Xóa món ăn
+        public async Task<bool> DeleteMenuItemAsync(int id)
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            var sql = "DELETE FROM menu_items WHERE id = @Id";
+            var affectedRows = await connection.ExecuteAsync(sql, new { Id = id });
+            return affectedRows > 0;
+        }
     }
 }
