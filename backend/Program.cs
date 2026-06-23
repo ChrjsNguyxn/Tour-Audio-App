@@ -1,53 +1,48 @@
 using backend.Database;
-using backend.Repository;
-using backend.Services;
+using backend.Repository; // Lưu ý: Namespace này phải khớp với chữ hoa/thường trong thư mục của bạn
+
 using backend.Models;
 using Dapper;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// các này để các lớp trong Repository/ tự chuyển đổi tên các trường sang cho lớp trong Models/ 
+// 1. Cấu hình Dapper (Tự động map snake_case trong DB sang PascalCase trong C#)
 Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 
-// cái này để cho phép frontend fetch dữ liệu từ server
+// 2. Cấu hình CORS (Cho phép React từ cổng khác gọi API vào)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("ReactPolicy", policy =>
     {
-        policy
-            .AllowAnyOrigin()
-            .AllowAnyHeader()
-            .AllowAnyMethod();
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
     });
 });
 
-//
+// 3. Đăng ký Database Context
 builder.Services.AddSingleton<AppDbContext>();
 
-builder.Services.AddSingleton<AppDbContext>();
-
-// EATERY
-builder.Services.AddScoped<EateryRepository>();// Repository/
-builder.Services.AddScoped<EateryService>();// Service/
-
-// CATEGORY
+// 4. Đăng ký các Repositories & Services
 builder.Services.AddScoped<CategoryRepository>();
 
-// MENUITEM
+builder.Services.AddScoped<EateryRepository>();
 builder.Services.AddScoped<MenuItemRepository>();
-
-// USER
 builder.Services.AddScoped<UserRepository>();
 
-//
+// 5. Đăng ký Controllers (Kích hoạt khả năng đọc API)
 builder.Services.AddControllers();
 
-//
 var app = builder.Build();
 
-app.UseCors("ReactPolicy"); // cho phép frontend fetch dữ liệu
+// ==========================================
+// KÍCH HOẠT MIDDLEWARE PIPELINE (Thứ tự rất quan trọng)
+// ==========================================
 
+// Bật CORS lên trước
+app.UseCors("ReactPolicy"); 
+
+// Ánh xạ các đường dẫn API tới các Controllers
 app.MapControllers();
-
 
 app.Run();
