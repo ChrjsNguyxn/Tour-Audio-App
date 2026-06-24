@@ -4,7 +4,7 @@ import POIInfoPanel from "../POI/components/POIInfoPanel";
 
 import { useState, useEffect } from "react";
 
-import { getAllVendors } from "../services/vendorService";
+import { getAllVendors } from "../services/APIService";
 
 function Home() {
   const userLocation = useUserLocation();
@@ -72,7 +72,8 @@ function Home() {
 
         {/* INFO PANEL */}
         <div className="w-1/3 border-l bg-white overflow-y-auto">
-          <POIInfoPanel poi={selectedPOI} />
+          <POIInfoPanel 
+            poi={selectedPOI} />
         </div>
 
       </div>
