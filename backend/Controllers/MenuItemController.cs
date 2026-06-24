@@ -25,6 +25,19 @@ namespace backend.Controllers
             return Ok(menuItems);
         }
 
+<<<<<<< HEAD
+=======
+        // Lấy ra menu đang được phục vụ cho tourist xem
+        // API: GET /api/v1/menuitem/eatery/{eateryId}/menu
+        [HttpGet("eateries/{eateryId}/menu")]
+        public async Task<IActionResult> GetAvailableMenu(int eateryId)
+        {
+            var menu = await _menuItemRepo.GetAvailableMenuItemsByEateryIdAsync(eateryId);
+
+            return Ok(menu);
+        }
+
+>>>>>>> 9ac07cc6df21a2ba074a0e0cd1990a3cc86e9517
         // API: POST /api/v1/menuitem/eatery/{eateryId}
         [HttpPost("eatery/{eateryId}")]
         public async Task<IActionResult> CreateMenuItem(int eateryId, [FromBody] CreateMenuItemRequestDto request)

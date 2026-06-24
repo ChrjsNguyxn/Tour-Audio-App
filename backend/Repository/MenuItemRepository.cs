@@ -74,5 +74,28 @@ namespace backend.Repository
             var affectedRows = await connection.ExecuteAsync(sql, new { Id = id });
             return affectedRows > 0;
         }
+<<<<<<< HEAD
+=======
+
+        // 5. Lấy danh sách món ăn đang được phục vụ(is_available = 1)
+        public async Task<IEnumerable<MenuItemResponseDto>> 
+        GetAvailableMenuItemsByEateryIdAsync(int eateryId)
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            var sql = @"
+                SELECT 
+                    id AS Id, eatery_id AS EateryId, name AS Name, 
+                    description AS Description, price AS Price, 
+                    image_path AS ImagePath, is_available AS IsAvailable, 
+                    created_at AS CreatedAt
+                FROM menu_items
+                WHERE eatery_id = @EateryId
+                AND is_available = 1
+                ORDER BY id DESC";
+            
+            return await connection.QueryAsync<MenuItemResponseDto>(sql, new { EateryId = eateryId });
+        }
+
+>>>>>>> 9ac07cc6df21a2ba074a0e0cd1990a3cc86e9517
     }
 }
