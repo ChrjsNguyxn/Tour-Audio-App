@@ -1,4 +1,27 @@
+import { useState, useEffect } from "react";
+import MenuPopup from "./MenuPopup";
+import { getAvailableMenuByEateryId } from "@/user_features/services/APIService";
+
 export default function POIInfoPanel({ poi }) {
+  const [showMenu, setShowMenu] = useState(false); // dùng cho menu popup
+
+  const [menuItems, setMenuItems] = useState([]); // dùng để lọc menu cho menu popup
+
+  // chuẩn bị menu popup
+  const handleViewMenu = async () => {
+    try {
+      console.log("Fetching menu for:", poi.id);
+
+      const menu = await getAvailableMenuByEateryId(poi.id);
+
+      setMenuItems(menu);   // store menu
+      setShowMenu(true);    // open popup
+    }
+    catch (error) {
+      console.error("Failed to load menu:", error);
+    }
+  };
+  
   if (!poi) {
     return (
       <div className="p-4 text-gray-500">
@@ -8,6 +31,7 @@ export default function POIInfoPanel({ poi }) {
   }
 
   return (
+    <>
     <div className="h-full overflow-y-auto">
 
       {/* IMAGE */}
@@ -66,14 +90,35 @@ export default function POIInfoPanel({ poi }) {
         </div>
 
         {/* ACTION */}
-        <button
-          className="w-full py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Navigate Here
-        </button>
+        <div className="space-y-2">
+
+          <button
+            onClick={handleViewMenu}
+            className="w-full py-2 bg-green-500 text-white rounded hover:bg-blue-600"
+          >
+            Xem Menu
+          </button>
+
+          <button
+            className="w-full py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Đi tới đây
+          </button>
+
+        </div>
 
       </div>
     </div>
+
+    
+    {showMenu && (
+      <MenuPopup
+        menuItems={menuItems}
+        onClose={() => setShowMenu(false)}
+      />
+    )}
+
+  </>
   );
 }
 

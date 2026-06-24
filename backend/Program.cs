@@ -1,5 +1,7 @@
 using System.Text;
+using backend.Database;
 using backend.Repository;
+using backend.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -9,6 +11,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Add AppDBContext 
+builder.Services.AddScoped<AppDbContext>();
 
 // ==========================================================
 // 1. ĐĂNG KÝ CÁC REPOSITORY (Dependency Injection)
@@ -22,6 +27,10 @@ builder.Services.AddScoped<TouristRepository>();
 builder.Services.AddScoped<AuthRepository>();
 builder.Services.AddScoped<ReviewRepository>();
 builder.Services.AddScoped<DashboardRepository>();
+builder.Services.AddScoped<MixedRepository>(); // repo cho POI
+
+// Đăng ký Service
+builder.Services.AddScoped<TouristService>(); // service cho tourist
 // ==========================================================
 // 2. CẤU HÌNH Ổ KHÓA BẢO MẬT (JWT TOKEN)
 // ==========================================================
@@ -38,6 +47,21 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend",
+        policy =>
+        {
+            policy
+                .WithOrigins(
+                    "http://localhost:5173",
+                    "https://localhost:5173"
+                )
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        });
+});
+
 var app = builder.Build();
 
 // ==========================================================
@@ -51,6 +75,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
+// Cho phép frontend gọi API
+app.UseCors("AllowFrontend");
+
 // BẮT BUỘC: Authentication phải nằm trên Authorization
 app.UseAuthentication(); // 1. Mày là ai? (Kiểm tra Token)
 app.UseAuthorization();  // 2. Mày được phép làm gì? (Kiểm tra Quyền)
