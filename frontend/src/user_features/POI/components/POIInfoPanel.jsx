@@ -7,6 +7,9 @@ export default function POIInfoPanel({ poi }) {
 
   const [menuItems, setMenuItems] = useState([]); // dùng để lọc menu cho menu popup
 
+  // URL dùng để lấy ảnh và file âm thanh, chú ý "http" chứ không phải "https"
+  const BACKEND_URL = "http://localhost:5092/";
+
   // chuẩn bị menu popup
   const handleViewMenu = async () => {
     try {
@@ -30,6 +33,8 @@ export default function POIInfoPanel({ poi }) {
     );
   }
 
+  console.log("Image URL:", `${BACKEND_URL}${poi.imagePath}`);
+
   return (
     <>
     <div className="h-full overflow-y-auto">
@@ -38,7 +43,7 @@ export default function POIInfoPanel({ poi }) {
       <div className="h-56 bg-gray-200 flex items-center justify-center text-gray-500">
         {poi.imagePath ? (
           <img
-            src={poi.imagePath}
+            src={`${BACKEND_URL}${poi.imagePath}`}
             alt={poi.name}
             className="w-full h-56 object-cover"
           />

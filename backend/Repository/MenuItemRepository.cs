@@ -74,8 +74,6 @@ namespace backend.Repository
             var affectedRows = await connection.ExecuteAsync(sql, new { Id = id });
             return affectedRows > 0;
         }
-<<<<<<< HEAD
-=======
 
         // 5. Lấy danh sách món ăn đang được phục vụ(is_available = 1)
         public async Task<IEnumerable<MenuItemResponseDto>> 
@@ -96,6 +94,5 @@ namespace backend.Repository
             return await connection.QueryAsync<MenuItemResponseDto>(sql, new { EateryId = eateryId });
         }
 
->>>>>>> 9ac07cc6df21a2ba074a0e0cd1990a3cc86e9517
     }
 }
