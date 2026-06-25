@@ -17,11 +17,51 @@ namespace FoodMapAPI.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.9");
 
-            modelBuilder.Entity("FoodMapAPI.Models.MenuItem", b =>
+            modelBuilder.Entity("FoodMapAPI.Models.Category", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Categories");
+                });
+
+            modelBuilder.Entity("FoodMapAPI.Models.Eatery", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AudioFilePath")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CloseTime")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -31,23 +71,86 @@ namespace FoodMapAPI.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("IsApproved")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsOpenNow")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double>("Latitude")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("Longitude")
+                        .HasColumnType("REAL");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Price")
+                    b.Property<string>("NarrationLanguage")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("Quantity")
+                    b.Property<string>("NarrationText")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OpenTime")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("OwnerId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("ShopId")
+                    b.Property<string>("PriceRange")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("Rating")
+                        .HasColumnType("REAL");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("OwnerId");
+
+                    b.ToTable("Eateries");
+                });
+
+            modelBuilder.Entity("FoodMapAPI.Models.MenuItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("EateryId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ImagePath")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsAvailable")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Price")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ShopId");
+                    b.HasIndex("EateryId");
 
                     b.ToTable("MenuItems");
                 });
@@ -86,71 +189,6 @@ namespace FoodMapAPI.Migrations
                     b.ToTable("Owners");
                 });
 
-            modelBuilder.Entity("FoodMapAPI.Models.Shop", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("AudioFilePath")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("CloseTime")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ImagePath")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsOpenNow")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<double>("Latitude")
-                        .HasColumnType("REAL");
-
-                    b.Property<double>("Longitude")
-                        .HasColumnType("REAL");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("NarrationLanguage")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("NarrationText")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("OpenTime")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("OwnerId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("PriceRange")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OwnerId");
-
-                    b.ToTable("Shops");
-                });
-
             modelBuilder.Entity("FoodMapAPI.Models.ViewLog", b =>
                 {
                     b.Property<int>("Id")
@@ -164,57 +202,66 @@ namespace FoodMapAPI.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("ShopId")
+                    b.Property<int>("EateryId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ShopId");
+                    b.HasIndex("EateryId");
 
                     b.ToTable("ViewLogs");
                 });
 
-            modelBuilder.Entity("FoodMapAPI.Models.MenuItem", b =>
+            modelBuilder.Entity("FoodMapAPI.Models.Eatery", b =>
                 {
-                    b.HasOne("FoodMapAPI.Models.Shop", "Shop")
-                        .WithMany("MenuItems")
-                        .HasForeignKey("ShopId")
+                    b.HasOne("FoodMapAPI.Models.Category", null)
+                        .WithMany("Eateries")
+                        .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Shop");
-                });
-
-            modelBuilder.Entity("FoodMapAPI.Models.Shop", b =>
-                {
-                    b.HasOne("FoodMapAPI.Models.Owner", "Owner")
+                    b.HasOne("FoodMapAPI.Models.Owner", null)
                         .WithMany("Shops")
                         .HasForeignKey("OwnerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
 
-                    b.Navigation("Owner");
+            modelBuilder.Entity("FoodMapAPI.Models.MenuItem", b =>
+                {
+                    b.HasOne("FoodMapAPI.Models.Eatery", "Eatery")
+                        .WithMany("MenuItems")
+                        .HasForeignKey("EateryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Eatery");
                 });
 
             modelBuilder.Entity("FoodMapAPI.Models.ViewLog", b =>
                 {
-                    b.HasOne("FoodMapAPI.Models.Shop", "Shop")
+                    b.HasOne("FoodMapAPI.Models.Eatery", "Eatery")
                         .WithMany()
-                        .HasForeignKey("ShopId")
+                        .HasForeignKey("EateryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Shop");
+                    b.Navigation("Eatery");
+                });
+
+            modelBuilder.Entity("FoodMapAPI.Models.Category", b =>
+                {
+                    b.Navigation("Eateries");
+                });
+
+            modelBuilder.Entity("FoodMapAPI.Models.Eatery", b =>
+                {
+                    b.Navigation("MenuItems");
                 });
 
             modelBuilder.Entity("FoodMapAPI.Models.Owner", b =>
                 {
                     b.Navigation("Shops");
-                });
-
-            modelBuilder.Entity("FoodMapAPI.Models.Shop", b =>
-                {
-                    b.Navigation("MenuItems");
                 });
 #pragma warning restore 612, 618
         }

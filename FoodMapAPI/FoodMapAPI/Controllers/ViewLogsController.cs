@@ -12,7 +12,7 @@ namespace FoodMapAPI.Controllers
         private readonly AppDbContext _context;
         public ViewLogsController(AppDbContext context) { _context = context; }
 
-        // POST: api/viewlogs  -- ghi log khi User xem/nghe quán
+        // POST: api/viewlogs
         [HttpPost]
         public async Task<IActionResult> LogAction([FromBody] ViewLog log)
         {
@@ -22,11 +22,11 @@ namespace FoodMapAPI.Controllers
             return Ok();
         }
 
-        // GET: api/viewlogs/shop/5 -- Owner xem thống kê quán mình
-        [HttpGet("shop/{shopId}")]
-        public async Task<ActionResult> GetStatsByShop(int shopId)
+        // GET: api/viewlogs/eatery/5
+        [HttpGet("eatery/{eateryId}")]
+        public async Task<ActionResult> GetStatsByEatery(int eateryId)
         {
-            var logs = await _context.ViewLogs.Where(l => l.ShopId == shopId).ToListAsync();
+            var logs = await _context.ViewLogs.Where(l => l.EateryId == eateryId).ToListAsync();
 
             var totalViews = logs.Count(l => l.ActionType == "view");
             var totalListens = logs.Count(l => l.ActionType == "listen_audio");

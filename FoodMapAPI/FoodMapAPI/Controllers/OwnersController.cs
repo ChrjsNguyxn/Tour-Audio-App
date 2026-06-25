@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using FoodMapAPI.DTOs;
-using FoodMapAPI.Models;
-using FoodMapAPI.Repository;
+using FoodMapAPI.Service;
 
 namespace FoodMapAPI.Controllers
 {
@@ -9,78 +8,50 @@ namespace FoodMapAPI.Controllers
     [Route("api/[controller]")]
     public class OwnersController : ControllerBase
     {
-        private readonly IOwnerRepository _ownerRepo;
+        private readonly IOwnerService _ownerService;
 
-        public OwnersController(IOwnerRepository ownerRepo)
+        public OwnersController(IOwnerService ownerService)
         {
-            _ownerRepo = ownerRepo;
+            _ownerService = ownerService;
         }
 
         // POST: api/owners/register
         [HttpPost("register")]
         public async Task<ActionResult<OwnerResponseDto>> Register(RegisterOwnerDto dto)
         {
-            var existing = await _ownerRepo.GetByEmailAsync(dto.Email);
-            if (existing != null)
-                return BadRequest("Email đã được sử dụng.");
-
-            var owner = new Owner
+            try
             {
-                FullName = dto.FullName,
-                Email = dto.Email,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-                PhoneNumber = dto.PhoneNumber,
-                Status = "Pending",
-                CreatedAt = DateTime.Now
-            };
-
-            var created = await _ownerRepo.CreateAsync(owner);
-
-            return Ok(new OwnerResponseDto
+                var result = await _ownerService.RegisterAsync(dto);
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
             {
-                Id = created.Id,
-                FullName = created.FullName,
-                Email = created.Email,
-                PhoneNumber = created.PhoneNumber,
-                Status = created.Status,
-                CreatedAt = created.CreatedAt
-            });
+                return BadRequest(ex.Message);
+            }
         }
 
         // POST: api/owners/login
         [HttpPost("login")]
         public async Task<ActionResult> Login(LoginOwnerDto dto)
         {
-            var owner = await _ownerRepo.GetByEmailAsync(dto.Email);
-
-            if (owner == null || !BCrypt.Net.BCrypt.Verify(dto.Password, owner.PasswordHash))
-                return Unauthorized("Email hoặc mật khẩu không đúng.");
-
-            if (owner.Status == "Pending")
-                return Unauthorized("Tài khoản đang chờ Admin duyệt.");
-
-            if (owner.Status == "Locked")
-                return Unauthorized("Tài khoản đã bị khóa.");
-
-            return Ok(new { message = "Đăng nhập thành công", ownerId = owner.Id, name = owner.FullName });
+            try
+            {
+                var result = await _ownerService.LoginAsync(dto);
+                return Ok(result);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
         }
 
         // GET: api/owners/5
         [HttpGet("{id}")]
         public async Task<ActionResult<OwnerResponseDto>> GetOwner(int id)
         {
-            var owner = await _ownerRepo.GetByIdAsync(id);
+            var owner = await _ownerService.GetByIdAsync(id);
             if (owner == null) return NotFound();
-
-            return Ok(new OwnerResponseDto
-            {
-                Id = owner.Id,
-                FullName = owner.FullName,
-                Email = owner.Email,
-                PhoneNumber = owner.PhoneNumber,
-                Status = owner.Status,
-                CreatedAt = owner.CreatedAt
-            });
+            return Ok(owner);
         }
     }
 }

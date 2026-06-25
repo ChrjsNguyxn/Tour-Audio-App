@@ -10,7 +10,7 @@
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         // Một owner có thể có nhiều quán
-        public List<Shop> Shops { get; set; } = new List<Shop>();
+        public List<Eatery> Shops { get; set; } = new List<Eatery>();
         public string Status { get; set; } = "Pending";
     }
 }

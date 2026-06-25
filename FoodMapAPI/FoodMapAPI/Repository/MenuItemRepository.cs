@@ -9,9 +9,9 @@ namespace FoodMapAPI.Repository
         private readonly AppDbContext _context;
         public MenuItemRepository(AppDbContext context) { _context = context; }
 
-        public async Task<IEnumerable<MenuItem>> GetByShopIdAsync(int shopId)
+        public async Task<IEnumerable<MenuItem>> GetByEateryIdAsync(int eateryId)
         {
-            return await _context.MenuItems.Where(m => m.ShopId == shopId).ToListAsync();
+            return await _context.MenuItems.Where(m => m.EateryId == eateryId).ToListAsync();
         }
 
         public async Task<MenuItem> CreateAsync(MenuItem item)
@@ -28,9 +28,9 @@ namespace FoodMapAPI.Repository
 
             existing.Name = item.Name;
             existing.ImagePath = item.ImagePath;
-            existing.Quantity = item.Quantity;
             existing.Price = item.Price;
             existing.Description = item.Description;
+            existing.IsAvailable = item.IsAvailable;
 
             await _context.SaveChangesAsync();
             return true;

@@ -9,8 +9,9 @@ namespace FoodMapAPI.Data
             : base(options) { }
 
         public DbSet<Owner> Owners { get; set; }
-        public DbSet<Shop> Shops { get; set; }
+        public DbSet<Eatery> Eateries { get; set; }
         public DbSet<MenuItem> MenuItems { get; set; }
         public DbSet<ViewLog> ViewLogs { get; set; }
+        public DbSet<Category> Categories { get; set; }
     }
 }

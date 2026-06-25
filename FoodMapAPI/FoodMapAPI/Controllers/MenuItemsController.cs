@@ -16,11 +16,11 @@ namespace FoodMapAPI.Controllers
             _menuRepo = menuRepo;
         }
 
-        // GET: api/menuitems/shop/5
-        [HttpGet("shop/{shopId}")]
-        public async Task<ActionResult<IEnumerable<MenuItem>>> GetByShop(int shopId)
+        // GET: api/menuitems/eatery/5
+        [HttpGet("eatery/{eateryId}")]
+        public async Task<ActionResult<IEnumerable<MenuItem>>> GetByEatery(int eateryId)
         {
-            return Ok(await _menuRepo.GetByShopIdAsync(shopId));
+            return Ok(await _menuRepo.GetByEateryIdAsync(eateryId));
         }
 
         // POST: api/menuitems
@@ -31,10 +31,10 @@ namespace FoodMapAPI.Controllers
             {
                 Name = dto.Name,
                 ImagePath = dto.ImagePath,
-                Quantity = dto.Quantity,
                 Price = dto.Price,
                 Description = dto.Description,
-                ShopId = dto.ShopId
+                IsAvailable = dto.IsAvailable,
+                EateryId = dto.EateryId
             };
 
             var created = await _menuRepo.CreateAsync(item);
@@ -49,9 +49,9 @@ namespace FoodMapAPI.Controllers
             {
                 Name = dto.Name,
                 ImagePath = dto.ImagePath,
-                Quantity = dto.Quantity,
                 Price = dto.Price,
-                Description = dto.Description
+                Description = dto.Description,
+                IsAvailable = dto.IsAvailable
             };
 
             var success = await _menuRepo.UpdateAsync(id, item);
