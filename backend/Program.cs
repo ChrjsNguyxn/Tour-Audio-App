@@ -7,8 +7,18 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
+builder.Services.AddTransient<backend.Repository.AuthRepository>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()  // Cho phép mọi Frontend
+              .AllowAnyMethod()  // Cho phép mọi lệnh GET, POST, PUT, DELETE
+              .AllowAnyHeader(); // Cho phép mọi Header (bao gồm cả Token)
+    });
+});
 
 // ==========================================================
 // 1. ĐĂNG KÝ CÁC REPOSITORY (Dependency Injection)
@@ -22,6 +32,16 @@ builder.Services.AddScoped<TouristRepository>();
 builder.Services.AddScoped<AuthRepository>();
 builder.Services.AddScoped<ReviewRepository>();
 builder.Services.AddScoped<DashboardRepository>();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        builder =>
+        {
+            builder.AllowAnyOrigin()   // Cho phép mọi tên miền/cổng
+                   .AllowAnyMethod()   // Cho phép mọi lệnh GET, POST, PUT, DELETE, OPTIONS
+                   .AllowAnyHeader();  // Cho phép mọi loại dữ liệu (JSON, Token...)
+        });
+});
 // ==========================================================
 // 2. CẤU HÌNH Ổ KHÓA BẢO MẬT (JWT TOKEN)
 // ==========================================================
@@ -37,9 +57,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = false
         };
     });
-
+builder.Services.AddTransient<backend.Database.AppDbContext>();
 var app = builder.Build();
+app.UseCors("AllowAll"); 
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<backend.Database.AppDbContext>();
+    dbContext.SyncDatabaseSchema();
+}
 
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<backend.Database.AppDbContext>();
+    dbContext.SyncDatabaseSchema();
+}
 // ==========================================================
 // 3. CẤU HÌNH PIPELINE (Thứ tự cực kỳ quan trọng)
 // ==========================================================
@@ -51,6 +82,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
 // BẮT BUỘC: Authentication phải nằm trên Authorization
 app.UseAuthentication(); // 1. Mày là ai? (Kiểm tra Token)
 app.UseAuthorization();  // 2. Mày được phép làm gì? (Kiểm tra Quyền)

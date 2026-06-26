@@ -1,7 +1,6 @@
 using System;
 
-
-namespace backend.DTOs.EateryDTO
+namespace Backend.DTOs.EateryDTO
 {
     // ==========================================
     // 1. NHÓM REQUEST (Admin & Owner gửi lên)
@@ -30,11 +29,28 @@ namespace backend.DTOs.EateryDTO
         // Tách class riêng để sau này nếu muốn khóa không cho sửa trường nào (VD: Tọa độ) thì tách ra dễ dàng.
     }
 
-    // DTO Kiểm duyệt / Khóa quán (Dành cho Admin duyệt bài, hoặc Owner tự xin tạm ngưng)
+    // DTO Kiểm duyệt / Khóa quán (Dành cho Admin duyệt bài, hoặc Owner tự xin tạm ngưng) - CŨ
     public class SuspendEateryRequestDto
     {
         // True = Đã duyệt/Đang hoạt động | False = Khóa/Chờ duyệt
         public bool IsApproved { get; set; } 
+    }
+
+    // --- CÁC DTO MỚI BỔ SUNG CHO TÍNH NĂNG ADMIN ---
+
+    // DTO dành riêng cho Admin sửa thông tin cơ bản
+    public class UpdateEateryAdminDto
+    {
+        public string Name { get; set; } = string.Empty;
+        public string? Address { get; set; }
+        public string? Description { get; set; }
+    }
+
+    // DTO mới cho tính năng Khóa / Xóa mềm có kèm lý do
+    public class ChangeStatusRequestDto
+    {
+        public string Status { get; set; } = string.Empty;
+        public string? Reason { get; set; }
     }
 
     // ==========================================
@@ -67,5 +83,9 @@ namespace backend.DTOs.EateryDTO
         public int CategoryId { get; set; }
         public bool IsApproved { get; set; }
         public string CreatedAt { get; set; } = string.Empty;
+
+        // BỔ SUNG 2 TRƯỜNG MỚI ĐỂ HIỂN THỊ LÝ DO KHÓA/XÓA TRÊN GIAO DIỆN ADMIN
+        public string? Status { get; set; }
+        public string? ActionReason { get; set; }
     }
 }

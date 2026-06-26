@@ -1,11 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
-using backend.DTOs.EateryDTO;
 using backend.Repository;
+
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using backend.DTOs;
+using Backend.DTOs.EateryDTO;
 
 namespace backend.Controllers
 {
-    // BẮT BUỘC CÓ 2 DÒNG NÀY ĐỂ ĐỊNH TUYẾN API
     [ApiController]
     [Route("api/v1/[controller]")]
     public class EateryController : ControllerBase
@@ -17,53 +20,54 @@ namespace backend.Controllers
             _eateryRepo = eateryRepo;
         }
 
-        // ==========================================
-        // API: GET /api/v1/eatery/admin-all
-        // Mô tả: Lấy danh sách tất cả quán ăn (bao gồm cả quán chưa duyệt) để Admin quản lý
-        // ==========================================
+        // 1. Lấy tất cả danh sách quán cho trang quản trị Admin
         [HttpGet("admin-all")]
-        public async Task<IActionResult> GetAllEateriesForAdmin()
+        [Authorize]
+        public async Task<IActionResult> GetAdminAll()
         {
             var eateries = await _eateryRepo.GetAllForAdminAsync();
             return Ok(eateries);
         }
 
-        // ==========================================
-        // API: PUT /api/v1/eatery/{id}/approve
-        // Mô tả: Admin duyệt hoặc khóa quán ăn (truyền lên { "isApproved": true/false })
-        // ==========================================
-        [HttpPut("{id}/approve")]
-        public async Task<IActionResult> ApproveEatery(int id, [FromBody] SuspendEateryRequestDto request)
+        // 2. API Đặc Quyền: Đổi trạng thái quán ăn (Duyệt / Khóa / Xóa mềm) kèm lý do
+        [HttpPut("{id}/change-status")]
+        [Authorize]
+        public async Task<IActionResult> ChangeStatus(int id, [FromBody] ChangeStatusRequestDto request)
         {
-            var success = await _eateryRepo.ChangeApprovalStatusAsync(id, request.IsApproved);
-            
-            if (!success) 
+            if (string.IsNullOrEmpty(request.Status))
             {
-                return NotFound(new { message = "Không tìm thấy quán ăn này!" });
+                return BadRequest(new { message = "Trạng thái không được để trống!" });
             }
-            
-            var statusStr = request.IsApproved ? "Đã duyệt" : "Đã khóa/Hủy duyệt";
-            return Ok(new { message = $"Thao tác thành công: {statusStr} quán ăn!" });
+
+            var result = await _eateryRepo.ChangeEateryStatusAsync(id, request.Status, request.Reason);
+            if (!result)
+            {
+                return NotFound(new { message = "Không tìm thấy quán ăn yêu cầu!" });
+            }
+
+            return Ok(new { message = $"Cập nhật trạng thái quán sang [{request.Status}] thành công!" });
         }
 
-        // ==========================================
-        // API: POST /api/v1/eatery
-        // Mô tả: Tạo quán ăn mới (Dành cho Admin hoặc Owner)
-        // ==========================================
+        // 3. Admin tự tạo quán ăn mới
         [HttpPost]
+        [Authorize]
         public async Task<IActionResult> CreateEatery([FromBody] CreateEateryRequestDto request)
         {
-            // Tạm thời gán cứng OwnerId = 1 để test.
-            // Sau này làm chức năng Đăng nhập xong, ta sẽ trích xuất ID từ Token của người dùng.
-            int dummyOwnerId = 1; 
-            
-            var newId = await _eateryRepo.CreateEateryAsync(dummyOwnerId, request);
-            
-            return CreatedAtAction(
-                nameof(GetAllEateriesForAdmin), 
-                new { id = newId }, 
-                new { message = "Tạo quán ăn thành công, đang chờ duyệt!", id = newId }
-            );
+            // Lấy ID người dùng đang login từ Token JWT để làm OwnerId (Mặc định Admin tạo thì Admin sở hữu hoặc gán cho id = 1)
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            int ownerId = string.IsNullOrEmpty(userIdStr) ? 1 : int.Parse(userIdStr);
+
+            var newId = await _eateryRepo.CreateEateryAsync(ownerId, request);
+            return Ok(new { message = "Admin thêm quán ăn thành công!", id = newId });
+        }
+
+        // 4. Admin chỉnh sửa thông tin cơ bản của quán
+        [HttpPut("{id}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateEatery(int id, [FromBody] UpdateEateryAdminDto request)
+        {
+            await _eateryRepo.UpdateEateryAsync(id, request);
+            return Ok(new { message = "Cập nhật thông tin quán thành công!" });
         }
     }
 }

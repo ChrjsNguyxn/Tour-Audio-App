@@ -1,13 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
-
 using backend.Repository;
 using backend.DTOs.MenuItemDTO;
 
 namespace backend.Controllers
 {
     [ApiController]
-    [Route("api/v1/[controller]")]
+    [Route("api/v1/[controller]")] // Tự động thành /api/v1/menuitem
     public class MenuItemController : ControllerBase
     {
         private readonly MenuItemRepository _menuItemRepo;
@@ -17,7 +16,15 @@ namespace backend.Controllers
             _menuItemRepo = menuItemRepo;
         }
 
-        // API: GET /api/v1/menuitem/eatery/{eateryId}
+        // [MỚI THÊM] - API: GET /api/v1/menuitem (Dành cho Admin xem tất cả)
+        [HttpGet]
+        public async Task<IActionResult> GetAllMenuItems()
+        {
+            var menuItems = await _menuItemRepo.GetAllMenuItemsAsync();
+            return Ok(menuItems);
+        }
+
+        // API: GET /api/v1/menuitem/eatery/{eateryId} (Dành cho App xem theo quán)
         [HttpGet("eatery/{eateryId}")]
         public async Task<IActionResult> GetMenuByEateryId(int eateryId)
         {
@@ -25,12 +32,12 @@ namespace backend.Controllers
             return Ok(menuItems);
         }
 
-        // API: POST /api/v1/menuitem/eatery/{eateryId}
-        [HttpPost("eatery/{eateryId}")]
-        public async Task<IActionResult> CreateMenuItem(int eateryId, [FromBody] CreateMenuItemRequestDto request)
+        // API: POST /api/v1/menuitem (Sửa lại để nhận EateryId từ Body JSON của React)
+        [HttpPost]
+        public async Task<IActionResult> CreateMenuItem([FromBody] CreateMenuItemRequestDto request)
         {
-            var newId = await _menuItemRepo.CreateMenuItemAsync(eateryId, request);
-            return CreatedAtAction(nameof(GetMenuByEateryId), new { eateryId = eateryId }, new { message = "Thêm món ăn thành công!", id = newId });
+            var newId = await _menuItemRepo.CreateMenuItemAsync(request);
+            return Ok(new { message = "Thêm món ăn thành công!", id = newId });
         }
 
         // API: PUT /api/v1/menuitem/{id}

@@ -2,9 +2,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Dapper;
-
+using backend.DTOs.UserDTO;
 using Microsoft.Extensions.Configuration;
-using Backend.DTOs.UserDTO;
 
 namespace backend.Repository
 {
@@ -17,33 +16,51 @@ namespace backend.Repository
             _connectionString = configuration.GetConnectionString("DefaultConnection") ?? "Data Source=Database/foodtour.db";
         }
 
-        // 1. Lấy danh sách tất cả User (Dành cho Admin)
-        public async Task<IEnumerable<UserDetailResponseDto>> GetAllUsersForAdminAsync()
+        // 1. Lấy tất cả (READ)
+        public async Task<IEnumerable<dynamic>> GetAllUsersAsync()
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            var sql = "SELECT id AS Id, username AS Username, full_name AS FullName, email AS Email, role AS Role, is_active AS IsActive FROM users ORDER BY id DESC";
+            return await connection.QueryAsync(sql);
+        }
+
+        // 2. Thêm mới (CREATE)
+        public async Task<int> CreateUserAsync(CreateUserAdminDto request)
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            // Lưu ý: Ở dự án thật Password sẽ được mã hóa (Hash). Để test nhanh, ta lưu thẳng.
+            var sql = @"
+                INSERT INTO users (username, password_hash, full_name, email, role, is_active) 
+                VALUES (@Username, @Password, @FullName, @Email, @Role, 1);
+                SELECT last_insert_rowid();";
+            return await connection.ExecuteScalarAsync<int>(sql, request);
+        }
+
+        // 3. Sửa thông tin (UPDATE)
+        public async Task<int> UpdateUserAsync(int id, UpdateUserAdminDto request)
         {
             using var connection = new SqliteConnection(_connectionString);
             var sql = @"
-                SELECT 
-                    id AS Id, 
-                    username AS Username, 
-                    full_name AS FullName, 
-                    email AS Email, 
-                    avatar_url AS AvatarUrl, 
-                    role AS Role, 
-                    is_active AS IsActive, 
-                    created_at AS CreatedAt 
-                FROM users
-                ORDER BY id DESC";
-            
-            return await connection.QueryAsync<UserDetailResponseDto>(sql);
+                UPDATE users 
+                SET full_name = @FullName, email = @Email, role = @Role
+                WHERE id = @Id;";
+            return await connection.ExecuteAsync(sql, new { request.FullName, request.Email, request.Role, Id = id });
         }
 
-        // 2. Quyền lực Admin: Khóa / Mở khóa tài khoản User
-        public async Task<bool> ChangeUserStatusAsync(int id, bool isActive)
+        // 4. Đổi trạng thái Khóa / Mở (UPDATE STATUS)
+        public async Task<int> ToggleStatusAsync(int id, bool isActive)
         {
             using var connection = new SqliteConnection(_connectionString);
-            var sql = "UPDATE users SET is_active = @IsActive WHERE id = @Id";
-            var affectedRows = await connection.ExecuteAsync(sql, new { IsActive = isActive, Id = id });
-            return affectedRows > 0;
+            var sql = "UPDATE users SET is_active = @IsActive WHERE id = @Id;";
+            return await connection.ExecuteAsync(sql, new { IsActive = isActive ? 1 : 0, Id = id });
+        }
+
+        // 5. Xóa vĩnh viễn (DELETE)
+        public async Task<int> DeleteUserAsync(int id)
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            var sql = "DELETE FROM users WHERE id = @Id;";
+            return await connection.ExecuteAsync(sql, new { Id = id });
         }
     }
 }

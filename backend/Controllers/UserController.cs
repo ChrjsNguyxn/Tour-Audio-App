@@ -1,13 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
-
 using backend.Repository;
-using Backend.DTOs.UserDTO;
+using backend.DTOs.UserDTO;
+using Microsoft.AspNetCore.Authorization;
 
 namespace backend.Controllers
 {
     [ApiController]
     [Route("api/v1/[controller]")]
+    [Authorize] // Bắt buộc phải có Token JWT mới được gọi các API này
     public class UserController : ControllerBase
     {
         private readonly UserRepository _userRepo;
@@ -17,33 +18,44 @@ namespace backend.Controllers
             _userRepo = userRepo;
         }
 
-        // ==========================================
-        // API: GET /api/v1/user/admin-all
-        // Mô tả: Trả về danh sách chi tiết tất cả người dùng trong hệ thống
-        // ==========================================
+        // Lấy danh sách (GET /api/v1/user/admin-all)
         [HttpGet("admin-all")]
         public async Task<IActionResult> GetAllUsers()
         {
-            var users = await _userRepo.GetAllUsersForAdminAsync();
+            var users = await _userRepo.GetAllUsersAsync();
             return Ok(users);
         }
 
-        // ==========================================
-        // API: PUT /api/v1/user/{id}/suspend
-        // Mô tả: Admin dùng để Khóa hoặc Mở khóa tài khoản (Truyền { "isActive": false })
-        // ==========================================
-        [HttpPut("{id}/suspend")]
-        public async Task<IActionResult> SuspendUser(int id, [FromBody] SuspendUserRequestDto request)
+        // Thêm mới (POST /api/v1/user)
+        [HttpPost]
+        public async Task<IActionResult> CreateUser([FromBody] CreateUserAdminDto request)
         {
-            var success = await _userRepo.ChangeUserStatusAsync(id, request.IsActive);
-            
-            if (!success)
-            {
-                return NotFound(new { message = "Không tìm thấy người dùng này!" });
-            }
+            var newId = await _userRepo.CreateUserAsync(request);
+            return Ok(new { message = "Thêm người dùng thành công!", id = newId });
+        }
 
-            var statusStr = request.IsActive ? "Mở khóa (Active)" : "Đã khóa (Suspend)";
-            return Ok(new { message = $"Thao tác thành công: {statusStr} tài khoản!" });
+        // Sửa thông tin (PUT /api/v1/user/{id})
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserAdminDto request)
+        {
+            await _userRepo.UpdateUserAsync(id, request);
+            return Ok(new { message = "Cập nhật thông tin thành công!" });
+        }
+
+        // Khóa / Mở khóa (PUT /api/v1/user/{id}/toggle-status)
+        [HttpPut("{id}/toggle-status")]
+        public async Task<IActionResult> ToggleStatus(int id, [FromBody] ToggleStatusDto request)
+        {
+            await _userRepo.ToggleStatusAsync(id, request.IsActive);
+            return Ok(new { message = "Cập nhật trạng thái thành công!" });
+        }
+
+        // Xóa (DELETE /api/v1/user/{id})
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteUser(int id)
+        {
+            await _userRepo.DeleteUserAsync(id);
+            return Ok(new { message = "Xóa người dùng thành công!" });
         }
     }
 }
