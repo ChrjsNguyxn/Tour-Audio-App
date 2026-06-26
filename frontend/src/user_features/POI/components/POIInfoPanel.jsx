@@ -32,6 +32,8 @@ export default function POIInfoPanel({ poi }) {
       </div>
     );
   }
+  console.log("Current POI:", poi.name);
+  console.log("Audio:", poi.audioFilePath);
 
   console.log("Image URL:", `${BACKEND_URL}${poi.imagePath}`);
 
@@ -93,6 +95,26 @@ export default function POIInfoPanel({ poi }) {
             {poi.description}
           </p>
         </div>
+
+        {/*kiểm tra nếu có file audio thì hiện player, nếu không có(null) thì hiện thông báo*/}
+        {poi.audioFilePath ? (
+          <div>
+            <h3 className="font-semibold mb-2">
+              Thuyết minh
+            </h3>
+
+            <audio
+              key={`${poi.id}-${poi.audioFilePath}`}
+              controls
+              className="w-full"
+              src={`${BACKEND_URL}${poi.audioFilePath}`}
+            />
+          </div>
+        ) : (
+          <div className="p-3 bg-gray-100 rounded text-sm text-gray-500">
+            🎧 Chưa có thuyết minh cho địa điểm này
+          </div>
+        )}
 
         {/* ACTION */}
         <div className="space-y-2">

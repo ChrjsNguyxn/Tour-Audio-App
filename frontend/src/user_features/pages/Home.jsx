@@ -46,6 +46,7 @@ function Home() {
           vendor.description ||
           "No description available",
 
+        audioFilePath: vendor.audioFilePath,
         imagePath: vendor.imagePath,
         openTime: vendor.openTime,
         closeTime: vendor.closeTime
