@@ -3,7 +3,13 @@ using backend.Repository;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
+using backend.Database;
+using backend.Services;
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Add AppDBContext 
+builder.Services.AddScoped<AppDbContext>();
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -32,6 +38,12 @@ builder.Services.AddScoped<TouristRepository>();
 builder.Services.AddScoped<AuthRepository>();
 builder.Services.AddScoped<ReviewRepository>();
 builder.Services.AddScoped<DashboardRepository>();
+
+builder.Services.AddScoped<MixedRepository>(); // repo cho POI
+
+// Đăng ký Service
+builder.Services.AddScoped<TouristService>(); // service cho tourist
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
@@ -81,7 +93,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+app.UseStaticFiles(); // cho phép truy cập file trong thư mục của backend
+
+// Cho phép frontend gọi API
+app.UseCors("AllowFrontend");
 
 // BẮT BUỘC: Authentication phải nằm trên Authorization
 app.UseAuthentication(); // 1. Mày là ai? (Kiểm tra Token)

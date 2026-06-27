@@ -1,4 +1,30 @@
+import { useState, useEffect } from "react";
+import MenuPopup from "./MenuPopup";
+import { getAvailableMenuByEateryId } from "@/user_features/services/APIService";
+
 export default function POIInfoPanel({ poi }) {
+  const [showMenu, setShowMenu] = useState(false); // dùng cho menu popup
+
+  const [menuItems, setMenuItems] = useState([]); // dùng để lọc menu cho menu popup
+
+  // URL dùng để lấy ảnh và file âm thanh, chú ý "http" chứ không phải "https"
+  const BACKEND_URL = "http://localhost:5092/";
+
+  // chuẩn bị menu popup
+  const handleViewMenu = async () => {
+    try {
+      console.log("Fetching menu for:", poi.id);
+
+      const menu = await getAvailableMenuByEateryId(poi.id);
+
+      setMenuItems(menu);   // store menu
+      setShowMenu(true);    // open popup
+    }
+    catch (error) {
+      console.error("Failed to load menu:", error);
+    }
+  };
+  
   if (!poi) {
     return (
       <div className="p-4 text-gray-500">
@@ -6,15 +32,20 @@ export default function POIInfoPanel({ poi }) {
       </div>
     );
   }
+  console.log("Current POI:", poi.name);
+  console.log("Audio:", poi.audioFilePath);
+
+  console.log("Image URL:", `${BACKEND_URL}${poi.imagePath}`);
 
   return (
+    <>
     <div className="h-full overflow-y-auto">
 
       {/* IMAGE */}
       <div className="h-56 bg-gray-200 flex items-center justify-center text-gray-500">
         {poi.imagePath ? (
           <img
-            src={poi.imagePath}
+            src={`${BACKEND_URL}${poi.imagePath}`}
             alt={poi.name}
             className="w-full h-56 object-cover"
           />
@@ -65,15 +96,56 @@ export default function POIInfoPanel({ poi }) {
           </p>
         </div>
 
+        {/*kiểm tra nếu có file audio thì hiện player, nếu không có(null) thì hiện thông báo*/}
+        {poi.audioFilePath ? (
+          <div>
+            <h3 className="font-semibold mb-2">
+              Thuyết minh
+            </h3>
+
+            <audio
+              key={`${poi.id}-${poi.audioFilePath}`}
+              controls
+              className="w-full"
+              src={`${BACKEND_URL}${poi.audioFilePath}`}
+            />
+          </div>
+        ) : (
+          <div className="p-3 bg-gray-100 rounded text-sm text-gray-500">
+            🎧 Chưa có thuyết minh cho địa điểm này
+          </div>
+        )}
+
         {/* ACTION */}
-        <button
-          className="w-full py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Navigate Here
-        </button>
+        <div className="space-y-2">
+
+          <button
+            onClick={handleViewMenu}
+            className="w-full py-2 bg-green-500 text-white rounded hover:bg-blue-600"
+          >
+            Xem Menu
+          </button>
+
+          <button
+            className="w-full py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Đi tới đây
+          </button>
+
+        </div>
 
       </div>
     </div>
+
+    
+    {showMenu && (
+      <MenuPopup
+        menuItems={menuItems}
+        onClose={() => setShowMenu(false)}
+      />
+    )}
+
+  </>
   );
 }
 

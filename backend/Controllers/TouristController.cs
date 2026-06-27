@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using backend.DTOs.TouristDTO;
 using backend.Repository;
+using backend.Services;
 
 namespace backend.Controllers
 {
@@ -10,18 +11,25 @@ namespace backend.Controllers
     public class TouristController : ControllerBase
     {
         private readonly TouristRepository _touristRepo;
+        private readonly TouristService _touristService;
 
-        public TouristController(TouristRepository touristRepo)
+        public TouristController(TouristRepository touristRepo,TouristService touristService )
         {
             _touristRepo = touristRepo;
+            _touristService = touristService;
         }
+    
 
         // API: GET /api/v1/tourist/eateries
         // Mô tả: Lấy danh sách quán ăn đã duyệt (Dành cho trang chủ)
         [HttpGet("eateries")]
         public async Task<IActionResult> GetApprovedEateries()
         {
-            var eateries = await _touristRepo.GetApprovedEateriesAsync();
+
+            //var eateries = await _touristRepo.GetApprovedEateriesAsync();
+
+            var eateries = await _touristService.GetAllPOIsAsync();
+
             return Ok(eateries);
         }
 
@@ -37,5 +45,7 @@ namespace backend.Controllers
             }
             return Ok(eatery);
         }
+
+        
     }
 }

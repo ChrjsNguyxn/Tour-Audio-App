@@ -59,5 +59,15 @@ namespace backend.Controllers
             
             return Ok(new { message = "Đã xóa món ăn khỏi thực đơn!" });
         }
+
+        // Lấy ra menu đang được phục vụ cho tourist xem
+        // API: GET /api/v1/menuitem/eatery/{eateryId}/menu
+        [HttpGet("eateries/{eateryId}/menu")]
+        public async Task<IActionResult> GetAvailableMenu(int eateryId)
+        {
+            var menu = await _menuItemRepo.GetAvailableMenuItemsByEateryIdAsync(eateryId);
+
+            return Ok(menu);
+        }
     }
 }
