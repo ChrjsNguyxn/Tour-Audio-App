@@ -59,6 +59,20 @@ namespace backend.Repository
             return await connection.ExecuteScalarAsync<int>(sql, request);
         }
 
+        public async Task<int> CreateMenuItemAsync(int eateryId, CreateMenuItemRequestDto request)
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            var sql = @"
+                INSERT INTO menu_items (eatery_id, name, description, price, image_path, is_available) 
+                VALUES (@EateryId, @Name, @Description, @Price, @ImagePath, @IsAvailable);
+                SELECT last_insert_rowid();";
+            
+            return await connection.ExecuteScalarAsync<int>(sql, new {
+                EateryId = eateryId, request.Name, request.Description, 
+                request.Price, request.ImagePath, request.IsAvailable
+            });
+        }
+
         // 3. Cập nhật thông tin món ăn
         public async Task<bool> UpdateMenuItemAsync(int id, UpdateMenuItemRequestDto request)
         {

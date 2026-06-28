@@ -44,6 +44,8 @@ builder.Services.AddScoped<MixedRepository>(); // repo cho POI
 // Đăng ký Service
 builder.Services.AddScoped<TouristService>(); // service cho tourist
 
+builder.Services.AddScoped<OwnerStatsRepository>(); // repo mới cho Owner Dashboard (stats, update/delete quán)
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
@@ -118,6 +120,53 @@ using (var connection = new Microsoft.Data.Sqlite.SqliteConnection("Data Source=
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );";
     cmd.ExecuteNonQuery();
+}
+
+
+// ==========================================================
+// MIGRATION CHO OWNER DASHBOARD (chỉ thêm bảng/cột mới,
+// không xóa/sửa dữ liệu cũ, an toàn chạy lại nhiều lần)
+// ==========================================================
+using (var ownerMigrationConn = new Microsoft.Data.Sqlite.SqliteConnection("Data Source=Database/foodtour.db"))
+{
+    ownerMigrationConn.Open();
+
+    // 1) Bảng thống kê MỚI hoàn toàn — không đụng bảng cũ
+    var createStatsTable = ownerMigrationConn.CreateCommand();
+    createStatsTable.CommandText = @"
+        CREATE TABLE IF NOT EXISTS eatery_stats (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            eatery_id INTEGER NOT NULL,
+            event_type TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );";
+    createStatsTable.ExecuteNonQuery();
+
+    // 2) Thêm 3 cột mới vào bảng eateries (chỉ nếu chưa có) — Dashboard.jsx cần
+    var existingColumns = new System.Collections.Generic.HashSet<string>();
+    var pragmaCmd = ownerMigrationConn.CreateCommand();
+    pragmaCmd.CommandText = "PRAGMA table_info(eateries);";
+    using (var reader = pragmaCmd.ExecuteReader())
+    {
+        while (reader.Read())
+        {
+            existingColumns.Add(reader.GetString(1)); // tên cột nằm ở index 1
+        }
+    }
+
+    void AddColumnIfMissing(string columnName, string columnDef)
+    {
+        if (!existingColumns.Contains(columnName))
+        {
+            var alterCmd = ownerMigrationConn.CreateCommand();
+            alterCmd.CommandText = $"ALTER TABLE eateries ADD COLUMN {columnName} {columnDef};";
+            alterCmd.ExecuteNonQuery();
+        }
+    }
+
+    AddColumnIfMissing("is_open_now", "INTEGER DEFAULT 1");
+    AddColumnIfMissing("narration_text", "TEXT");
+    AddColumnIfMissing("narration_language", "TEXT DEFAULT 'vi-VN'");
 }
 
 app.Run();

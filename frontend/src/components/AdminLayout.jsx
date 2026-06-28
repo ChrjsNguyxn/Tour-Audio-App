@@ -2,9 +2,31 @@ import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { LayoutDashboard, Store, Users, LogOut, Utensils, Music } from 'lucide-react';
+
+import { jwtDecode } from "jwt-decode";
+
+
 export default function AdminLayout({ children }) {
     const location = useLocation();
     const navigate = useNavigate();
+
+    // Xử lý token để hiển thị username sau khi đăng nhập
+    const token = localStorage.getItem("foodtour_admin_token");
+
+    let username = "Admin";
+
+    if (token) {
+        try {
+            const decoded = jwtDecode(token);
+
+            console.log(decoded); // optional, remove later
+
+            username = decoded.unique_name || "Admin";
+        } catch (err) {
+            console.error("Invalid token:", err);
+        }
+    }
+    //======================================================
 
     // Hàm xử lý Đăng xuất
     const handleLogout = () => {
@@ -54,7 +76,7 @@ export default function AdminLayout({ children }) {
                 <header className="bg-white shadow-sm h-16 flex items-center justify-between px-6 z-10">
                     <h1 className="text-xl font-semibold text-gray-800">Hệ thống Quản trị</h1>
                     <div className="flex items-center">
-                        <span className="text-gray-600 mr-3">Xin chào, <strong>Admin</strong></span>
+                        <span className="text-gray-600 mr-3">Xin chào <strong>{username}</strong></span>
                         <div className="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold shadow-md">
                             A
                         </div>

@@ -1,6 +1,6 @@
 using System;
 
-namespace Backend.DTOs.EateryDTO
+namespace backend.DTOs.EateryDTO
 {
     // ==========================================
     // 1. NHÓM REQUEST (Admin & Owner gửi lên)
@@ -39,11 +39,32 @@ namespace Backend.DTOs.EateryDTO
     // --- CÁC DTO MỚI BỔ SUNG CHO TÍNH NĂNG ADMIN ---
 
     // DTO dành riêng cho Admin sửa thông tin cơ bản
+    /*
     public class UpdateEateryAdminDto
     {
         public string Name { get; set; } = string.Empty;
         public string? Address { get; set; }
         public string? Description { get; set; }
+    }
+    */
+    public class UpdateEateryAdminDto // mới
+    {
+        public string Name { get; set; } = string.Empty;
+        public string? Address { get; set; }
+        public string? Description { get; set; }
+
+        public int CategoryId { get; set; }
+
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+
+        public string? PriceRange { get; set; }
+
+        public string? ImagePath { get; set; }
+        public string? AudioFilePath { get; set; }
+
+        public string? OpenTime { get; set; }
+        public string? CloseTime { get; set; }
     }
 
     // DTO mới cho tính năng Khóa / Xóa mềm có kèm lý do

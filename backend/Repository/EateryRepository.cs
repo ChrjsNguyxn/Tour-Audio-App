@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 using Dapper;
 using Microsoft.Extensions.Configuration;
 using backend.DTOs;
-using Backend.DTOs.EateryDTO;
+using backend.DTOs.EateryDTO;
 
 namespace backend.Repository
 {
@@ -74,6 +74,7 @@ namespace backend.Repository
         }
 
         // 4. Cập nhật thông tin quán (Sửa tên, địa chỉ, mô tả)
+        /*
         public async Task<int> UpdateEateryAsync(int id, UpdateEateryAdminDto request)
         {
             using var connection = new SqliteConnection(_connectionString);
@@ -82,6 +83,43 @@ namespace backend.Repository
                 SET name = @Name, address = @Address, description = @Description 
                 WHERE id = @Id;";
             return await connection.ExecuteAsync(sql, new { request.Name, request.Address, request.Description, Id = id });
+        }
+        */
+        public async Task<int> UpdateEateryAsync(int id, UpdateEateryAdminDto request)
+        {
+            using var connection = new SqliteConnection(_connectionString);
+
+            var sql = @"
+                UPDATE eateries
+                SET
+                    name = @Name,
+                    address = @Address,
+                    description = @Description,
+                    category_id = @CategoryId,
+                    latitude = @Latitude,
+                    longitude = @Longitude,
+                    price_range = @PriceRange,
+                    image_path = @ImagePath,
+                    audio_file_path = @AudioFilePath,
+                    open_time = @OpenTime,
+                    close_time = @CloseTime
+                WHERE id = @Id;";
+
+            return await connection.ExecuteAsync(sql, new
+            {
+                request.Name,
+                request.Address,
+                request.Description,
+                request.CategoryId,
+                request.Latitude,
+                request.Longitude,
+                request.PriceRange,
+                request.ImagePath,
+                request.AudioFilePath,
+                request.OpenTime,
+                request.CloseTime,
+                Id = id
+            });
         }
     }
 }

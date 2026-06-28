@@ -5,7 +5,7 @@ using backend.Repository;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using backend.DTOs;
-using Backend.DTOs.EateryDTO;
+using backend.DTOs.EateryDTO;
 
 namespace backend.Controllers
 {

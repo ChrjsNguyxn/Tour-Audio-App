@@ -17,6 +17,9 @@ export default function EateryManagement() {
         audioFilePath: '', imagePath: '', openTime: '08:00', closeTime: '22:00', status: 'pending' 
     });
 
+    // --- STATE MODAL CHO DANH MỤC(CATEGORY) ---
+    const [categories, setCategories] = useState([]);
+
     // --- STATE MODAL KHÓA QUÁN ---
     const [showLockModal, setShowLockModal] = useState(false);
     const [eateryToLock, setEateryToLock] = useState(null);
@@ -29,6 +32,7 @@ export default function EateryManagement() {
 
     useEffect(() => {
         fetchEateries();
+        fetchCategories(); // LOAD CATEGORY
     }, []);
 
     const fetchEateries = async () => {
@@ -50,6 +54,19 @@ export default function EateryManagement() {
             setError("Không thể tải dữ liệu. Vui lòng thử lại!");
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Lấy dữ liệu category để cập nhật lên dropbox
+    const fetchCategories = async () => {
+        try {
+            const response = await api.get("/category");
+
+            console.log("Categories response:", response.data);
+            
+            setCategories(response.data);
+        } catch (err) {
+            console.error("Cannot load categories", err);
         }
     };
 
@@ -82,12 +99,33 @@ export default function EateryManagement() {
                 latitude: parseFloat(formData.latitude) || 0,
                 longitude: parseFloat(formData.longitude) || 0
             };
+
+            // CÁI NÀY ĐỂ LOG KIỂM TRA PAYLOAD
+            console.log("===== Payload =====");
+            console.log(payload);
+            console.table(payload);
+            
             if (modalMode === 'add') await api.post('/eatery', payload);
-            else if (modalMode === 'edit') await api.put(`/eatery/${formData.id}`, payload);
+            else if (modalMode === 'edit'){
+                 await api.put(`/eatery/${formData.id}`, payload);
+
+                 console.log("Sending payload:", payload);
+                console.log("ID:", formData.id);
+            }
+
             setShowModal(false);
             fetchEateries();
         } catch (err) {
-            alert("Có lỗi xảy ra khi lưu dữ liệu!");
+            //alert("Có lỗi xảy ra khi lưu dữ liệu!");
+            console.error(err);
+
+            console.log("Response:", err.response);
+
+            alert(
+                err.response?.data?.message ||
+                JSON.stringify(err.response?.data) ||
+                err.message
+            );
         }
     };
 
@@ -328,7 +366,9 @@ export default function EateryManagement() {
                             </button>
                         </div>
 
-                        <form onSubmit={handleSubmitForm} className="space-y-4">
+                        {/*FORM SỬA THÔNG TIN QUÁN ĂN*/}
+                        <form onSubmit={handleSubmitForm} 
+                        className="overflow-y-auto p-6 space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {/* Cột 1 */}
                                 <div className="space-y-4">
@@ -349,6 +389,34 @@ export default function EateryManagement() {
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Giờ đóng cửa</label>
                                             <input type="time" disabled={modalMode === 'view'} value={formData.closeTime} onChange={(e) => setFormData({...formData, closeTime: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-100"/>
                                         </div>
+                                    </div>
+
+                                    {/*Drop box sửa danh mục(category)*/}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Danh mục
+                                        </label>
+
+                                        <select
+                                            disabled={modalMode === "view"}
+                                            value={formData.categoryId}
+                                            onChange={(e) =>
+                                                setFormData({
+                                                    ...formData,
+                                                    categoryId: parseInt(e.target.value)
+                                                })
+                                            }
+                                            className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-100"
+                                        >
+                                            {categories.map(category => (
+                                                <option
+                                                    key={category.id}
+                                                    value={category.id}
+                                                >
+                                                    {category.name}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </div>
                                 </div>
 
@@ -371,6 +439,21 @@ export default function EateryManagement() {
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Ảnh đại diện (Link/Path)</label>
                                         <input type="text" disabled={modalMode === 'view'} value={formData.imagePath} onChange={(e) => setFormData({...formData, imagePath: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-100 text-sm font-mono"/>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            File Audio (Link/Path)
+                                        </label>
+                                        <input
+                                            type="text"
+                                            placeholder="uploads/audio/example.mp3"
+                                            disabled={modalMode === 'view'}
+                                            value={formData.audioFilePath}
+                                            onChange={(e) =>
+                                                setFormData({ ...formData, audioFilePath: e.target.value })
+                                            }
+                                            className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-100 text-sm font-mono"
+                                        />
                                     </div>
                                 </div>
                             </div>
